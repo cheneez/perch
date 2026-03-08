@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Perch — Verify</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; min-height: 100vh; display: grid; grid-template-columns: 1fr 1.5fr; }
+  .left { background: #0f1f4b; padding: 48px; display: flex; flex-direction: column; justify-content: space-between; }
+  .logo { font-family: 'Playfair Display', serif; font-size: 28px; color: white; }
+  .left-mid h1 { font-family: 'Playfair Display', serif; font-size: 42px; color: white; line-height: 1.2; margin-bottom: 16px; }
+  .left-mid p { font-size: 15px; color: rgba(255,255,255,0.5); line-height: 1.6; }
+  .stats { display: flex; gap: 32px; }
+  .stat-num { font-family: 'Playfair Display', serif; font-size: 28px; color: white; display: block; }
+  .stat-label { font-size: 12px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+  .right { background: white; display: flex; align-items: center; justify-content: center; padding: 48px; }
+  .card { width: 100%; max-width: 480px; }
+  h2 { font-family: 'Playfair Display', serif; font-size: 38px; color: #0f1f4b; margin-bottom: 4px; }
+  .subtitle { color: #999; font-size: 14px; margin-bottom: 32px; }
+  .steps { border: 1.5px solid #e8e8e8; border-radius: 14px; padding: 8px; margin-bottom: 28px; }
+  .step { display: flex; align-items: flex-start; gap: 14px; padding: 16px; border-bottom: 1px solid #f0f0f0; }
+  .step:last-child { border-bottom: none; }
+  .step-num { width: 32px; height: 32px; background: #0f1f4b; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; flex-shrink: 0; }
+  .step-text { font-size: 14px; color: #444; line-height: 1.5; padding-top: 4px; }
+  .btn { width: 100%; padding: 14px; background: #0f1f4b; color: white; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; margin-bottom: 16px; text-decoration: none; display: block; text-align: center; }
+  .bottom { text-align: center; font-size: 13.5px; color: #999; }
+  .bottom a { color: #0f1f4b; font-weight: 500; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="left">
+  <div class="logo">Perch</div>
+  <div class="left-mid">
+    <h1>You're almost there! Check your inbox</h1>
+    <p>The Exclusive housing platform built for students — verified listings, compatible roommates, and zero guesswork.</p>
+  </div>
+  <div class="stats">
+    <div><span class="stat-num">300+</span><span class="stat-label">Listings</span></div>
+    <div><span class="stat-num">1500+</span><span class="stat-label">Enrolled</span></div>
+    <div><span class="stat-num">80%</span><span class="stat-label">Verified</span></div>
+  </div>
+</div>
+<div class="right">
+  <div class="card">
+    <h2>Check your inbox</h2>
+    <p class="subtitle">Verification link sent to your @bc.edu email</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">Open your BC email — check your @bc.edu inbox (and spam folder just in case)</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">Click the verification link — the link expires in 24 hours</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text">You're in! — start browsing listings and finding roommates</div></div>
+    </div>
+    <a href="/auth/dashboard/" class="btn">Verify</a>
+    <div class="bottom">Don't have an account? <a href="/auth/signup/">Create one</a></div>
+  </div>
+</div>
+</body>
+</html>
