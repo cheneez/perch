@@ -1,12 +1,12 @@
+import uuid
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.core import mail
 
 from .models import Profile
-
-
 @override_settings(
     GOOGLE_OAUTH_CLIENT_ID='test-client-id',
     GOOGLE_OAUTH_CLIENT_SECRET='test-client-secret',
@@ -27,10 +27,11 @@ class AuthFlowTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse('dashboard'), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse('verify'), fetch_redirect_response=False)
         user = User.objects.get(email='casey@realty.com')
         profile = Profile.objects.get(user=user)
         self.assertEqual(profile.user_type, 'realtor')
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_student_signup_redirects_to_google_flow(self):
         response = self.client.post(
@@ -98,11 +99,12 @@ class AuthFlowTests(TestCase):
             {'state': 'expected-state', 'code': 'oauth-code'},
         )
 
-        self.assertRedirects(response, reverse('dashboard'), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse('verify'), fetch_redirect_response=False)
         user = User.objects.get(email='eagle@bc.edu')
         profile = Profile.objects.get(user=user)
         self.assertEqual(profile.user_type, 'student')
         self.assertEqual(self.client.session['_auth_user_id'], str(user.id))
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_dashboard_redirects_to_role_specific_page(self):
         user = User.objects.create_user(
@@ -110,12 +112,43 @@ class AuthFlowTests(TestCase):
             email='casey@realty.com',
             password='securepass123',
         )
-        Profile.objects.create(user=user, user_type='realtor')
+        Profile.objects.create(user=user, user_type='realtor', email_verified=True)
         self.client.force_login(user)
 
         response = self.client.get(reverse('dashboard'))
 
         self.assertRedirects(response, reverse('lessor:dashboard'))
+
+    def test_dashboard_redirects_unverified_user_to_verify_page(self):
+        user = User.objects.create_user(
+            username='jamie',
+            email='jamie@bc.edu',
+            password='securepass123',
+        )
+        Profile.objects.create(user=user, user_type='student', email_verified=False)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertRedirects(response, reverse('verify'))
+
+    def test_verify_confirm_marks_user_verified(self):
+        user = User.objects.create_user(
+            username='verified',
+            email='verified@bc.edu',
+            password='securepass123',
+        )
+        profile = Profile.objects.create(user=user, user_type='student', email_verified=False)
+        profile.email_verification_token = uuid.uuid4()
+        profile.save(update_fields=['email_verification_token'])
+        token = profile.email_verification_token
+
+        response = self.client.get(reverse('verify_confirm', args=[token]))
+
+        self.assertRedirects(response, reverse('dashboard'), fetch_redirect_response=False)
+        profile = Profile.objects.get(user=user)
+        self.assertTrue(profile.email_verified)
+        self.assertIsNone(profile.email_verification_token)
 
     @patch('accounts.views.fetch_google_userinfo')
     @patch('accounts.views.fetch_google_tokens')

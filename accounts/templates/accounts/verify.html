@@ -26,6 +26,7 @@
   .btn { width: 100%; padding: 14px; background: #0f1f4b; color: white; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; margin-bottom: 16px; text-decoration: none; display: block; text-align: center; }
   .bottom { text-align: center; font-size: 13.5px; color: #999; }
   .bottom a { color: #0f1f4b; font-weight: 500; text-decoration: none; }
+  .message { color: #0f1f4b; font-size: 13px; margin-bottom: 14px; }
 </style>
 </head>
 <body>
@@ -44,14 +45,15 @@
 <div class="right">
   <div class="card">
     <h2>Check your inbox</h2>
-    <p class="subtitle">Verification link sent to your @bc.edu email</p>
+    <p class="subtitle">Verification link sent to {{ email }}</p>
+    {% if messages %}{% for message in messages %}<div class="message">{{ message }}</div>{% endfor %}{% endif %}
     <div class="steps">
-      <div class="step"><div class="step-num">1</div><div class="step-text">Open your BC email — check your @bc.edu inbox (and spam folder just in case)</div></div>
+      <div class="step"><div class="step-num">1</div><div class="step-text">Open your email inbox for {{ email }} and check spam if needed.</div></div>
       <div class="step"><div class="step-num">2</div><div class="step-text">Click the verification link — the link expires in 24 hours</div></div>
       <div class="step"><div class="step-num">3</div><div class="step-text">You're in! — start browsing listings and finding roommates</div></div>
     </div>
-    <a href="/auth/dashboard/" class="btn">Verify</a>
-    <div class="bottom">Don't have an account? <a href="/auth/signup/">Create one</a></div>
+    <a href="/auth/verify/resend/" class="btn">Resend Verification Email</a>
+    <div class="bottom">Already verified? <a href="/auth/dashboard/">Continue</a></div>
   </div>
 </div>
 </body>

@@ -4,12 +4,15 @@ import secrets
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.core.mail import send_mail
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.urls import reverse
 
 from .models import Profile
@@ -41,6 +44,7 @@ def create_unique_username(email):
         suffix += 1
 
     return candidate
+
 
 def get_google_callback_url(request):
     configured_callback = settings.GOOGLE_OAUTH_CALLBACK_URL.strip()
@@ -97,6 +101,43 @@ def oauth_is_configured():
     )
 
 
+def send_verification_email(request, user, profile):
+    profile.email_verification_token = uuid.uuid4()
+    profile.verification_email_sent_at = timezone.now()
+    profile.save(update_fields=['email_verification_token', 'verification_email_sent_at'])
+    token = profile.email_verification_token
+    verify_url = request.build_absolute_uri(reverse('verify_confirm_short', args=[token]))
+    subject = 'Verify your Perch account'
+    message = (
+        f"Hi {user.first_name or user.username},\n\n"
+        "Please verify your Perch account by clicking the link below:\n\n"
+        f"{verify_url}\n\n"
+        "This link expires in 24 hours."
+    )
+
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+        return True
+    except Exception:
+        messages.error(
+            request,
+            'We could not send the verification email right now. Check your email settings and try again.',
+        )
+        return False
+
+
+def ensure_verified_or_redirect(request, profile):
+    if profile.email_verified:
+        return None
+    return redirect('verify')
+
+
 def login_view(request):
     if request.method == 'POST':
         email = request.POST['email'].strip().lower()
@@ -111,6 +152,8 @@ def login_view(request):
                     return render(request, 'accounts/login.html', {'google_oauth_enabled': oauth_is_configured()})
 
                 login(request, user)
+                if not profile.email_verified:
+                    return redirect('verify')
                 return redirect('dashboard')
 
             messages.error(request, 'Wrong password')
@@ -168,8 +211,10 @@ def signup_view(request):
             last_name=last_name,
         )
         Profile.objects.create(user=user, user_type=user_type)
+        profile = Profile.objects.get(user=user)
         login(request, user)
-        return redirect('dashboard')
+        send_verification_email(request, user, profile)
+        return redirect('verify')
 
     return render(
         request,
@@ -287,6 +332,9 @@ def google_callback_view(request):
         return redirect('login')
 
     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    if not profile.email_verified:
+        send_verification_email(request, user, profile)
+        return redirect('verify')
     return redirect('dashboard')
 
 
@@ -296,13 +344,60 @@ def logout_view(request):
 
 
 def verify_view(request):
-    return render(request, 'accounts/verify.html')
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    profile = get_profile(request.user)
+    if profile.email_verified:
+        return redirect('dashboard')
+
+    return render(
+        request,
+        'accounts/verify.html',
+        {
+            'email': request.user.email,
+            'user_type': profile.user_type,
+        },
+    )
+
+
+def resend_verification_view(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    profile = get_profile(request.user)
+    if profile.email_verified:
+        return redirect('dashboard')
+
+    send_verification_email(request, request.user, profile)
+    messages.success(request, 'We sent a new verification email.')
+    return redirect('verify')
+
+
+def verify_confirm_view(request, token):
+    try:
+        profile = Profile.objects.select_related('user').get(email_verification_token=token)
+        user = profile.user
+    except Profile.DoesNotExist:
+        messages.error(request, 'That verification link is invalid or has expired.')
+        return redirect('login')
+
+    profile.email_verified = True
+    profile.email_verification_token = None
+    profile.save(update_fields=['email_verified', 'email_verification_token'])
+
+    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    messages.success(request, 'Your email has been verified.')
+    return redirect('dashboard')
 
 
 def dashboard_view(request):
     if not request.user.is_authenticated:
         return redirect('login')
     profile = get_profile(request.user)
+    redirect_response = ensure_verified_or_redirect(request, profile)
+    if redirect_response is not None:
+        return redirect_response
     if profile.user_type == 'student':
         return redirect(reverse('student:dashboard'))
     return redirect(reverse('lessor:dashboard'))

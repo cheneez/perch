@@ -37,3 +37,10 @@ GOOGLE_OAUTH_CLIENT_ID=your-google-client-id
 GOOGLE_OAUTH_CLIENT_SECRET=your-google-client-secret
 GOOGLE_OAUTH_CALLBACK_URL=http://127.0.0.1:8000/auth/google/callback/
 ```
+
+## Verification email
+
+Verification emails are enabled for new accounts.
+
+By default, Django prints those emails into the terminal running `runserver`.
+If you want real inbox delivery, add SMTP settings to `.env`.
