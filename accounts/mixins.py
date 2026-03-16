@@ -18,6 +18,8 @@ class RoleRequiredMixin(LoginRequiredMixin):
             user=request.user,
             defaults={'user_type': 'student'}
         )
+        if not profile.email_verified:
+            return redirect('verify')
         user_type = profile.user_type
         if self.required_role == 'student':
             if user_type != 'student':
