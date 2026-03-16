@@ -39,6 +39,14 @@ class Listing(models.Model):
     total_upfront_cost = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True
     )
+    bedrooms = models.IntegerField(default=1)
+    bathrooms = models.IntegerField(default=1)
+    distance_miles = models.FloatField(default=0.0)
+    has_laundry = models.BooleanField(default=False)
+    has_ac_heat = models.BooleanField(default=False)
+    avg_rating = models.FloatField(default=0.0)
+    image_count = models.IntegerField(default=0)
+    video_count = models.IntegerField(default=0)
     parking_available = models.BooleanField(default=False)
     pets_allowed = models.BooleanField(default=False)
     stairs = models.BooleanField(default=False)
