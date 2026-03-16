@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -13,7 +14,14 @@ def login_view(request):
             user = authenticate(username=user.username, password=password)
             if user:
                 login(request, user)
-                return redirect('/auth/dashboard/')
+                profile, _ = Profile.objects.get_or_create(
+                    user=user,
+                    defaults={'user_type': 'student'}
+                )
+                if profile.user_type == 'student':
+                    return redirect(reverse('student:dashboard'))
+                else:
+                    return redirect(reverse('lessor:dashboard'))
             else:
                 messages.error(request, 'Wrong password')
         except User.DoesNotExist:
@@ -68,12 +76,12 @@ def verify_view(request):
 
 def dashboard_view(request):
     if not request.user.is_authenticated:
-        return redirect('/auth/login/')
-    profile, created = Profile.objects.get_or_create(
+        return redirect('login')
+    profile, _ = Profile.objects.get_or_create(
         user=request.user,
         defaults={'user_type': 'student'}
     )
-    return render(request, 'accounts/dashboard.html', {
-        'user': request.user,
-        'user_type': profile.user_type
-    })
+    if profile.user_type == 'student':
+        return redirect(reverse('student:dashboard'))
+    else:
+        return redirect(reverse('lessor:dashboard'))

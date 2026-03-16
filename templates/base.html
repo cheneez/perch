@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Perch{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <nav class="navbar navbar-expand navbar-dark fixed-top top-navbar">
+    <div class="container-fluid">
+      <a class="navbar-brand brand-perch" href="#">Perch</a>
+      <div class="navbar-nav flex-grow-1 justify-content-center mx-3">
+        <div class="input-group navbar-search" style="max-width: 320px;">
+          <span class="input-group-text navbar-search-icon"><i class="bi bi-search"></i></span>
+          <input type="search" class="form-control navbar-search-input" placeholder="Search..." aria-label="Search">
+        </div>
+      </div>
+      <div class="navbar-nav align-items-center flex-row gap-2">
+        <a class="nav-link text-white px-2" href="#" aria-label="Notifications">
+          <i class="bi bi-bell fs-5"></i>
+        </a>
+        <div class="dropdown">
+          <a class="nav-link dropdown-toggle d-flex align-items-center text-white text-decoration-none" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="avatar-circle me-2">{% if user.get_full_name %}{{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}{% else %}{{ user.username|slice:":2"|upper }}{% endif %}</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="#">Profile</a></li>
+            <li><a class="dropdown-item" href="#">Settings</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="sidebar" id="sidebar">
+    <button class="sidebar-toggle btn btn-link text-white p-2" id="sidebarToggle" aria-label="Toggle sidebar">
+      <i class="bi bi-chevron-double-left" id="sidebarToggleIcon"></i>
+    </button>
+    <nav class="sidebar-nav mt-2">
+      <a class="sidebar-link active" href="#"><i class="bi bi-house-door"></i><span class="sidebar-label">Overview</span></a>
+      <a class="sidebar-link" href="#"><i class="bi bi-chat-dots"></i><span class="sidebar-label">Messages</span></a>
+      <a class="sidebar-link" href="#"><i class="bi bi-people"></i><span class="sidebar-label">Groups</span></a>
+      <a class="sidebar-link" href="#"><i class="bi bi-person-badge"></i><span class="sidebar-label">Roommates</span></a>
+      <a class="sidebar-link" href="#"><i class="bi bi-search"></i><span class="sidebar-label">Find Housing</span></a>
+      <a class="sidebar-link" href="#"><i class="bi bi-person-circle"></i><span class="sidebar-label">My profile</span></a>
+    </nav>
+  </div>
+
+  <main class="main-content" id="mainContent">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    (function() {
+      var sidebar = document.getElementById('sidebar');
+      var mainContent = document.getElementById('mainContent');
+      var toggleBtn = document.getElementById('sidebarToggle');
+      var toggleIcon = document.getElementById('sidebarToggleIcon');
+      if (sidebar && toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+          sidebar.classList.toggle('sidebar-collapsed');
+          if (toggleIcon) {
+            toggleIcon.classList.toggle('bi-chevron-double-left');
+            toggleIcon.classList.toggle('bi-chevron-double-right');
+          }
+        });
+      }
+    })();
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
