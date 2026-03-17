@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perch — Find your next chapter off-campus</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__overlay"></div>
+
+    <nav class="hero__nav">
+      <div class="hero__logo">Perch</div>
+      <div class="hero__nav-links">
+        <a href="#about">About</a>
+        <a href="#features">Features</a>
+        <a href="/auth/login/">Sign in</a>
+      </div>
+      <a href="/auth/signup/" class="hero__cta-btn">Get Started</a>
+    </nav>
+
+    <div class="hero__content">
+      <div class="hero__copy">
+        <h1>Find your next chapter off-campus with Perch.</h1>
+        <p class="hero__subtitle">
+          Explore verified listings, match with compatible roommates, and move in with confidence — all in one place made for your campus.
+        </p>
+        <div class="hero__primary-cta">
+          <a href="/auth/signup/" class="btn-primary">Get started</a>
+          <a href="/auth/login/" class="btn-secondary">I already have an account</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero__scroll-indicator">
+      <span>Scroll</span>
+      <span class="arrow">&#8595;</span>
+    </div>
+  </header>
+
+  <main>
+    <section id="about" class="section section--about">
+      <div class="section__inner">
+        <div class="section__eyebrow">About</div>
+        <h2>Off-campus housing that actually feels built for you.</h2>
+        <div class="about__grid">
+          <p>
+            Perch is a housing platform designed specifically for students navigating the jump off campus. We partner with trusted local lessors and student communities to bring you listings that are transparent, vetted, and easy to compare.
+          </p>
+          <div class="about__points">
+            <p>
+              From search to signing, we remove the guesswork: every listing includes the details students care about most — commute time to campus, amenities, real photos, and what it’s actually like to live there.
+            </p>
+            <p>
+              Whether you’re moving with friends or looking for a new roommate, Perch keeps everything in one place so you can focus on the next chapter, not the logistics.
+            </p>
+          </div>
+        </div>
+        <div class="about__stats">
+          <div class="stat">
+            <span class="stat-num">300+</span>
+            <span class="stat-label">Verified listings</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num">1,500+</span>
+            <span class="stat-label">Students enrolled</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num">5 min</span>
+            <span class="stat-label">To get matched</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="section section--features">
+      <div class="section__inner">
+        <div class="section__eyebrow">Features</div>
+        <h2>Everything you need to land the right place.</h2>
+
+        <div class="features__grid">
+          <article class="feature-card">
+            <h3>Verified off-campus listings</h3>
+            <p>
+              Every property is vetted with real details, clear pricing, and up-to-date availability so you’re never guessing what you’ll walk into.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <h3>Roommate compatibility</h3>
+            <p>
+              Share your preferences and lifestyle, then discover students who are actually a fit — before you sign a lease together.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <h3>Built around your campus</h3>
+            <p>
+              Filter by walking time to class, nearby spots you love, and neighborhoods other students recommend.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <h3>From search to move-in</h3>
+            <p>
+              Shortlist favorites, compare options with your group, and keep conversations with lessors all in one organized place.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--cta">
+      <div class="section__inner cta__content">
+        <div>
+          <div class="section__eyebrow">Get started</div>
+          <h2>Ready to find your next place?</h2>
+          <p>
+            Create your Perch profile in minutes and start exploring verified off-campus housing curated for your campus community.
+          </p>
+        </div>
+        <div class="cta__actions">
+          <a href="/auth/signup/" class="btn-primary btn-primary--large">Create your account</a>
+          <a href="/auth/login/" class="btn-text">Sign in instead</a>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
+
