@@ -21,6 +21,10 @@ body {
   background-color: var(--perch-cream);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 .hero {
   position: relative;
   min-height: 100vh;
@@ -52,16 +56,23 @@ body {
 }
 
 .hero__logo {
+  flex: 1;
   font-family: "Playfair Display", "Times New Roman", serif;
   font-size: 26px;
   letter-spacing: 0.04em;
 }
 
 .hero__nav-links {
+  flex: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 20px;
   font-size: 14px;
+}
+
+.hero__nav-spacer {
+  flex: 1;
 }
 
 .hero__nav-links a {
