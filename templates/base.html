@@ -44,12 +44,23 @@
       <i class="bi bi-chevron-double-left" id="sidebarToggleIcon"></i>
     </button>
     <nav class="sidebar-nav mt-2">
-      <a class="sidebar-link active" href="#"><i class="bi bi-house-door"></i><span class="sidebar-label">Overview</span></a>
-      <a class="sidebar-link" href="#"><i class="bi bi-chat-dots"></i><span class="sidebar-label">Messages</span></a>
-      <a class="sidebar-link" href="#"><i class="bi bi-people"></i><span class="sidebar-label">Groups</span></a>
-      <a class="sidebar-link" href="#"><i class="bi bi-person-badge"></i><span class="sidebar-label">Roommates</span></a>
-      <a class="sidebar-link" href="#"><i class="bi bi-search"></i><span class="sidebar-label">Find Housing</span></a>
-      <a class="sidebar-link" href="#"><i class="bi bi-person-circle"></i><span class="sidebar-label">My profile</span></a>
+      {% with ns=request.resolver_match.namespace|default:"student" url_name=request.resolver_match.url_name %}
+      {% if ns == 'student' %}
+      <a class="sidebar-link {% if url_name == 'dashboard' %}active{% endif %}" href="{% url 'student:dashboard' %}"><i class="bi bi-house-door"></i><span class="sidebar-label">Overview</span></a>
+      <a class="sidebar-link {% if url_name == 'messages' %}active{% endif %}" href="{% url 'student:messages' %}"><i class="bi bi-chat-dots"></i><span class="sidebar-label">Messages</span></a>
+      <a class="sidebar-link {% if url_name == 'groups' %}active{% endif %}" href="{% url 'student:groups' %}"><i class="bi bi-people"></i><span class="sidebar-label">Groups</span></a>
+      <a class="sidebar-link {% if url_name == 'roommates' %}active{% endif %}" href="{% url 'student:roommates' %}"><i class="bi bi-person-badge"></i><span class="sidebar-label">Roommates</span></a>
+      <a class="sidebar-link {% if url_name == 'find_housing' %}active{% endif %}" href="{% url 'student:find_housing' %}"><i class="bi bi-search"></i><span class="sidebar-label">Find Housing</span></a>
+      <a class="sidebar-link {% if url_name == 'profile' %}active{% endif %}" href="{% url 'student:profile' %}"><i class="bi bi-person-circle"></i><span class="sidebar-label">My profile</span></a>
+      {% else %}
+      <a class="sidebar-link {% if url_name == 'dashboard' %}active{% endif %}" href="{% url 'lessor:dashboard' %}"><i class="bi bi-house-door"></i><span class="sidebar-label">Overview</span></a>
+      <a class="sidebar-link {% if url_name == 'messages' %}active{% endif %}" href="{% url 'lessor:messages' %}"><i class="bi bi-chat-dots"></i><span class="sidebar-label">Messages</span></a>
+      <a class="sidebar-link {% if url_name == 'create_listing' or url_name == 'listings-create' %}active{% endif %}" href="{% url 'listings:listings-create' %}"><i class="bi bi-plus-square"></i><span class="sidebar-label">Create listing</span></a>
+      <a class="sidebar-link {% if url_name == 'view_listings' or url_name == 'listings-list' %}active{% endif %}" href="{% url 'listings:listings-list' %}"><i class="bi bi-list-ul"></i><span class="sidebar-label">View listings</span></a>
+      <a class="sidebar-link {% if url_name == 'find_tenants' %}active{% endif %}" href="{% url 'lessor:find_tenants' %}"><i class="bi bi-people"></i><span class="sidebar-label">Find tenants</span></a>
+      <a class="sidebar-link {% if url_name == 'profile' %}active{% endif %}" href="{% url 'lessor:profile' %}"><i class="bi bi-person-circle"></i><span class="sidebar-label">My profile</span></a>
+      {% endif %}
+      {% endwith %}
     </nav>
   </div>
 
