@@ -49,6 +49,23 @@ class AuthFlowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], f"{reverse('google_start')}?role=student")
 
+    def test_student_signup_rejects_non_bc_email(self):
+        response = self.client.post(
+            reverse('signup'),
+            {
+                'first_name': 'Alex',
+                'last_name': 'Student',
+                'email': 'student@gmail.com',
+                'password': 'securepass123',
+                'confirm_password': 'securepass123',
+                'user_type': 'student',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Students must sign up with a verified @bc.edu email.')
+        self.assertFalse(User.objects.filter(email='student@gmail.com').exists())
+
     def test_google_start_uses_request_host_when_callback_host_differs(self):
         response = self.client.get(
             reverse('google_start') + '?role=student',

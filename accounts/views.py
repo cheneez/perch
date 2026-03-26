@@ -1,5 +1,6 @@
 import json
 from json import JSONDecodeError
+import logging
 import secrets
 import urllib.error
 import urllib.parse
@@ -20,6 +21,7 @@ from .models import Profile
 GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 GOOGLE_USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo'
+logger = logging.getLogger(__name__)
 
 
 def is_bc_email(email):
@@ -77,7 +79,17 @@ def fetch_google_tokens(code, redirect_uri):
     try:
         with urllib.request.urlopen(request) as response:
             return json.load(response)
-    except (urllib.error.HTTPError, urllib.error.URLError, JSONDecodeError) as exc:
+    except urllib.error.HTTPError as exc:
+        error_body = exc.read().decode('utf-8', errors='replace')
+        raise ValueError(
+            f'Google sign-in failed during token exchange: HTTP {exc.code} {error_body}'
+        ) from exc
+    except urllib.error.URLError as exc:
+        reason = getattr(exc, 'reason', exc)
+        raise ValueError(
+            f'Google sign-in failed during token exchange: network error ({reason}).'
+        ) from exc
+    except JSONDecodeError as exc:
         raise ValueError('Google sign-in failed during token exchange.') from exc
 
 
@@ -90,7 +102,17 @@ def fetch_google_userinfo(access_token):
     try:
         with urllib.request.urlopen(request) as response:
             return json.load(response)
-    except (urllib.error.HTTPError, urllib.error.URLError, JSONDecodeError) as exc:
+    except urllib.error.HTTPError as exc:
+        error_body = exc.read().decode('utf-8', errors='replace')
+        raise ValueError(
+            f'Google sign-in failed while loading your profile: HTTP {exc.code} {error_body}'
+        ) from exc
+    except urllib.error.URLError as exc:
+        reason = getattr(exc, 'reason', exc)
+        raise ValueError(
+            f'Google sign-in failed while loading your profile: network error ({reason}).'
+        ) from exc
+    except JSONDecodeError as exc:
         raise ValueError('Google sign-in failed while loading your profile.') from exc
 
 
@@ -184,6 +206,16 @@ def signup_view(request):
             return render(request, 'accounts/signup.html', {'google_oauth_enabled': oauth_is_configured()})
 
         if user_type == 'student':
+            # Students can only create accounts via their verified @bc.edu Google identity.
+            # If a client submits a non-BC email here, block early (Google OAuth will also
+            # enforce this again at callback time).
+            if email and not is_bc_email(email):
+                messages.error(request, 'Students must sign up with a verified @bc.edu email.')
+                return render(
+                    request,
+                    'accounts/signup.html',
+                    {'google_oauth_enabled': oauth_is_configured()},
+                )
             return redirect(f"{reverse('google_start')}?role=student")
 
         if password != confirm_password:
@@ -280,7 +312,8 @@ def google_callback_view(request):
     try:
         token_data = fetch_google_tokens(code, redirect_uri)
         user_info = fetch_google_userinfo(token_data['access_token'])
-    except (KeyError, ValueError):
+    except (KeyError, ValueError) as exc:
+        logger.warning('Google OAuth callback failed: %s', exc)
         messages.error(
             request,
             'Google sign-in could not be completed. Check the Google redirect URI and make sure your account is allowed as a test user.',
