@@ -17,7 +17,15 @@
       <div class="carousel-inner h-100">
         {% for img in listing.images.all %}
         <div class="carousel-item {% if forloop.first %}active{% endif %} h-100">
-          <img src="{{ img.image_url }}" class="d-block w-100 h-100" style="object-fit:cover;" alt="Listing image">
+          {% if img.image %}
+            <img src="{{ img.image.url }}" class="d-block w-100 h-100" style="object-fit:cover;" alt="Listing image">
+          {% elif img.image_url %}
+            <img src="{{ img.image_url }}" class="d-block w-100 h-100" style="object-fit:cover;" alt="Listing image">
+          {% else %}
+            <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+              <i class="bi bi-image" style="font-size: 3rem; opacity: 0.4;"></i>
+            </div>
+          {% endif %}
         </div>
         {% empty %}
         <div class="carousel-item active h-100">
@@ -48,7 +56,7 @@
       <div class="position-absolute bottom-0 start-50 translate-middle-x mb-2">
         <span class="px-3 py-1 rounded-pill text-white"
               style="background: rgba(0,0,0,0.45); font-size: 0.85rem;">
-          {{ listing.image_count }} Images, {{ listing.video_count }} Videos
+          {{ listing.images.count }} Images
         </span>
       </div>
     </div>

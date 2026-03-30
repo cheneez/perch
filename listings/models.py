@@ -78,8 +78,12 @@ class ListingImage(models.Model):
         on_delete=models.CASCADE,
         related_name="images",
     )
-    image_url = models.URLField(max_length=500)
+    # Existing rows may already be in the DB. Make uploads optional so
+    # migrations can apply without forcing a default file.
+    image = models.ImageField(upload_to="listing_images/", null=True, blank=True)
+    # Keep legacy column (from earlier URL-based implementation) optional.
+    image_url = models.URLField(max_length=500, null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
-        return f"Image for {self.listing_id}"
+        return f"Image for listing {self.listing_id}"
 # Create your models here.
