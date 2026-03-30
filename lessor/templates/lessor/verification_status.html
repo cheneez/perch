@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verification — Perch{% endblock %}
+
+{% block content %}
+<div class="profile-page container-fluid py-4">
+  <h1 class="h4 fw-bold mb-3">Verification status</h1>
+  <div class="card profile-card border-0 shadow-sm" style="max-width: 480px;">
+    <div class="card-body p-4">
+      {% if p.verified %}
+      <p class="mb-0"><span class="badge text-bg-success me-2">Verified</span> Your lessor account is verified.</p>
+      {% else %}
+      <p class="text-muted mb-0">You are not verified yet. Verification review will be available in a future update.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
