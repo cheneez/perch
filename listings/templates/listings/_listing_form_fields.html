@@ -1,0 +1,123 @@
+<h5 class="mb-3">Basic Info</h5>
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <label for="{{ form.title.id_for_label }}" class="form-label">Title</label>
+    {{ form.title }}
+  </div>
+  <div class="col-md-6">
+    <label for="{{ form.address.id_for_label }}" class="form-label">Address</label>
+    {{ form.address }}
+  </div>
+  <div class="col-md-3">
+    <label for="{{ form.bedrooms.id_for_label }}" class="form-label">Bedrooms</label>
+    {{ form.bedrooms }}
+  </div>
+  <div class="col-md-3">
+    <label for="{{ form.bathrooms.id_for_label }}" class="form-label">Bathrooms</label>
+    {{ form.bathrooms }}
+  </div>
+  <div class="col-md-6">
+    <label for="{{ form.distance_miles.id_for_label }}" class="form-label">Distance to Campus (miles)</label>
+    {{ form.distance_miles }}
+  </div>
+</div>
+
+<div class="mb-4">
+  <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+  {{ form.description }}
+</div>
+
+<h5 class="mb-3">Pricing & Fees</h5>
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <label for="{{ form.price_monthly.id_for_label }}" class="form-label">Monthly Price ($)</label>
+    {{ form.price_monthly }}
+  </div>
+  <div class="col-md-4">
+    <label for="{{ form.security_deposit.id_for_label }}" class="form-label">Security Deposit ($)</label>
+    {{ form.security_deposit }}
+  </div>
+  <div class="col-md-4">
+    <label for="{{ form.broker_fee.id_for_label }}" class="form-label">Broker Fee ($)</label>
+    {{ form.broker_fee }}
+  </div>
+  <div class="col-md-4">
+    <label for="{{ form.application_fee.id_for_label }}" class="form-label">Application Fee ($)</label>
+    {{ form.application_fee }}
+  </div>
+  <div class="col-md-4">
+    <label for="{{ form.estimated_utilities_cost.id_for_label }}" class="form-label">Est. Utilities / Month ($)</label>
+    {{ form.estimated_utilities_cost }}
+  </div>
+  <div class="col-md-4">
+    <label for="{{ form.total_upfront_cost.id_for_label }}" class="form-label">Total Upfront Cost ($)</label>
+    {{ form.total_upfront_cost }}
+  </div>
+  <div class="col-md-4">
+    <label for="{{ form.status.id_for_label }}" class="form-label">Listing Status</label>
+    {{ form.status }}
+  </div>
+</div>
+
+<h5 class="mb-3">Lease Details</h5>
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <label for="{{ form.room_type.id_for_label }}" class="form-label">Room Type</label>
+    {{ form.room_type }}
+  </div>
+  <div class="col-md-6">
+    <label for="{{ form.lease_type.id_for_label }}" class="form-label">Lease Type</label>
+    {{ form.lease_type }}
+  </div>
+  <div class="col-md-6">
+    <label for="{{ form.lease_start.id_for_label }}" class="form-label">Lease Start</label>
+    {{ form.lease_start }}
+  </div>
+  <div class="col-md-6">
+    <label for="{{ form.lease_end.id_for_label }}" class="form-label">Lease End</label>
+    {{ form.lease_end }}
+  </div>
+</div>
+
+<h5 class="mb-3">Amenities & Policies</h5>
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="form-check mb-2">
+      {{ form.parking_available }}
+      <label class="form-check-label" for="{{ form.parking_available.id_for_label }}">Parking available</label>
+    </div>
+    <div class="form-check mb-2">
+      {{ form.pets_allowed }}
+      <label class="form-check-label" for="{{ form.pets_allowed.id_for_label }}">Pets allowed</label>
+    </div>
+    <div class="form-check mb-2">
+      {{ form.stairs }}
+      <label class="form-check-label" for="{{ form.stairs.id_for_label }}">Stairs</label>
+    </div>
+    <div class="form-check mb-2">
+      {{ form.shared_space }}
+      <label class="form-check-label" for="{{ form.shared_space.id_for_label }}">Shared space</label>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="form-check mb-2">
+      {{ form.utilities_included }}
+      <label class="form-check-label" for="{{ form.utilities_included.id_for_label }}">Utilities included in rent</label>
+    </div>
+    <div class="form-check mb-2">
+      {{ form.has_laundry }}
+      <label class="form-check-label" for="{{ form.has_laundry.id_for_label }}">Laundry available</label>
+    </div>
+    <div class="form-check mb-2">
+      {{ form.has_ac_heat }}
+      <label class="form-check-label" for="{{ form.has_ac_heat.id_for_label }}">AC / Heat available</label>
+    </div>
+  </div>
+</div>
+
+<h5 class="mb-3">Photos</h5>
+<div class="mb-3">
+  <label for="images" class="form-label">Upload Photos</label>
+  <input id="images" name="images" type="file" class="form-control" multiple accept="image/*">
+  <div class="form-text text-muted">Upload images from your computer.</div>
+</div>

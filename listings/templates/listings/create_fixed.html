@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Create Listing — Housing Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-1">Create a Listing</h2>
+      <p class="text-muted small mb-0">Fill out the details below to create a new listing.</p>
+    </div>
+    <div class="text-muted small">
+      {% now "l, F j, Y" %}
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 col-lg-10 col-xl-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          {% if form.errors %}
+            <div class="alert alert-danger">Please fix the highlighted fields and try again.</div>
+          {% endif %}
+
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% include "listings/_listing_form_fields.html" %}
+
+            <div class="d-flex justify-content-end gap-2 mt-3">
+              <a href="{% url 'listings:listings-list' %}" class="btn btn-outline-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary">Create Listing</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
