@@ -364,6 +364,14 @@ def google_callback_view(request):
         )
         return redirect('login')
 
+    if role == 'student' and not profile.email_verified:
+        # For BC student accounts created via Google OAuth, the Google `email_verified`
+        # claim is our verification source of truth. Avoid forcing a separate email-link
+        # verification step for student logins.
+        profile.email_verified = True
+        profile.email_verification_token = None
+        profile.save(update_fields=['email_verified', 'email_verification_token'])
+
     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
     if not profile.email_verified:
         send_verification_email(request, user, profile)

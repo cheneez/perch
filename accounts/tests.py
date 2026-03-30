@@ -116,12 +116,13 @@ class AuthFlowTests(TestCase):
             {'state': 'expected-state', 'code': 'oauth-code'},
         )
 
-        self.assertRedirects(response, reverse('verify'), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse('dashboard'), fetch_redirect_response=False)
         user = User.objects.get(email='eagle@bc.edu')
         profile = Profile.objects.get(user=user)
         self.assertEqual(profile.user_type, 'student')
+        self.assertTrue(profile.email_verified)
         self.assertEqual(self.client.session['_auth_user_id'], str(user.id))
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_dashboard_redirects_to_role_specific_page(self):
         user = User.objects.create_user(
