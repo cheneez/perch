@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}User Profile — Perch{% endblock %}
+
+{% block content %}
+<div class="profile-page container-fluid py-4">
+  <h1 class="h4 fw-bold text-dark mb-4">User Profile</h1>
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card profile-card border-0 shadow-sm mb-3">
+        <div class="card-body text-center py-4">
+          {% if p.profile_picture %}
+          <img src="{{ p.profile_picture.url }}" alt="" class="profile-avatar-lg rounded-circle mb-3">
+          {% else %}
+          <div class="profile-avatar-lg rounded-circle bg-secondary-subtle d-inline-flex align-items-center justify-content-center mb-3 fw-bold text-secondary fs-2">
+            {{ p.first_name|slice:":1" }}{{ p.last_name|slice:":1" }}
+          </div>
+          {% endif %}
+          <h2 class="h5 fw-bold mb-3">{{ p.full_name }}</h2>
+          {% if top_contacts %}
+          <ul class="list-unstyled text-start small mb-0 mx-auto" style="max-width: 280px;">
+            {% for c in top_contacts %}
+            <li class="mb-2 d-flex align-items-center gap-2">
+              <i class="bi {{ c.icon }}"></i>
+              <span class="text-break">{{ c.value }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          <a href="{% url 'lessor:edit_profile' %}" class="btn btn-profile-outline mt-4">Edit Profile</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <div class="card profile-card border-0 shadow-sm mb-3">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-3">Details</h2>
+          <dl class="row profile-details-dl mb-0">
+            <dt class="col-sm-4">Username</dt>
+            <dd class="col-sm-8">{{ p.username }}</dd>
+            <dt class="col-sm-4">Date of birth</dt>
+            <dd class="col-sm-8">{% if p.date_of_birth %}{{ p.date_of_birth|date:"m/d/Y" }}{% endif %}</dd>
+            <dt class="col-sm-4">First name</dt>
+            <dd class="col-sm-8">{{ p.first_name }}</dd>
+            <dt class="col-sm-4">Last name</dt>
+            <dd class="col-sm-8">{{ p.last_name }}</dd>
+            <dt class="col-sm-4">Profile type</dt>
+            <dd class="col-sm-8">{{ p.profile_type }}</dd>
+            <dt class="col-sm-4">Gender identity</dt>
+            <dd class="col-sm-8">
+              {% if p.gender_identity == 'self_describe' %}
+                {{ p.gender_self_describe|default:"—" }}
+              {% else %}
+                {{ p.get_gender_identity_display }}
+              {% endif %}
+            </dd>
+            <dt class="col-sm-4">Verified</dt>
+            <dd class="col-sm-8">
+              {% if p.verified %}
+              <span class="badge text-bg-success">Yes</span>
+              {% else %}
+              <span class="badge text-bg-secondary">No</span>
+              {% endif %}
+            </dd>
+          </dl>
+          <a href="{% url 'lessor:edit_details' %}" class="btn btn-profile-outline mt-4">Edit Details</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-1">
+    <div class="col-md-4">
+      <a href="{% url 'listings:listings-list' %}" class="text-decoration-none">
+        <div class="card profile-feature-card h-100 border rounded-3 p-4 text-center text-dark">
+          <i class="bi bi-list-ul fs-2 d-block mb-2"></i>
+          <span class="fw-bold">My Listings</span>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="{% url 'lessor:messages' %}" class="text-decoration-none">
+        <div class="card profile-feature-card h-100 border rounded-3 p-4 text-center text-dark">
+          <i class="bi bi-envelope fs-2 d-block mb-2"></i>
+          <span class="fw-bold">Inbox</span>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="{% url 'lessor:verification' %}" class="text-decoration-none">
+        <div class="card profile-feature-card h-100 border rounded-3 p-4 text-center text-dark">
+          <i class="bi bi-patch-check fs-2 d-block mb-2"></i>
+          <span class="fw-bold">Verification Status</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

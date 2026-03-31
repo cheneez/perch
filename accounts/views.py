@@ -17,6 +17,8 @@ from django.utils import timezone
 from django.urls import reverse
 
 from .models import Profile
+from lessor.models import LessorProfile
+from student.models import StudentProfile
 
 GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
@@ -440,5 +442,9 @@ def dashboard_view(request):
     if redirect_response is not None:
         return redirect_response
     if profile.user_type == 'student':
+        if not StudentProfile.objects.filter(user=request.user).exists():
+            return redirect(reverse('student:create_profile'))
         return redirect(reverse('student:dashboard'))
+    if not LessorProfile.objects.filter(user=request.user).exists():
+        return redirect(reverse('lessor:create_profile'))
     return redirect(reverse('lessor:dashboard'))

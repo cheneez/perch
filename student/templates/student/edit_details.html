@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit details — Perch{% endblock %}
+
+{% block content %}
+<div class="profile-page container-fluid py-4">
+  <h1 class="h4 fw-bold mb-4">Edit details</h1>
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card profile-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <form method="post" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {{ field.errors }}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="{% url 'student:profile' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+  var sel = document.getElementById('id_gender_identity');
+  var selfField = document.getElementById('id_gender_self_describe');
+  var selfWrap = selfField ? selfField.closest('.mb-3') : null;
+  if (!sel || !selfWrap) return;
+  function sync() {
+    selfWrap.style.display = sel.value === 'self_describe' ? 'block' : 'none';
+  }
+  sel.addEventListener('change', sync);
+  sync();
+})();
+</script>
+{% endblock %}

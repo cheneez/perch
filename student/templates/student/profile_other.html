@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load profile_tags %}
+
+{% block title %}{{ p.full_name }} — Perch{% endblock %}
+
+{% block content %}
+<div class="profile-page container-fluid py-4">
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card profile-card border-0 shadow-sm">
+        <div class="card-body text-center py-4">
+          {% if p.profile_picture %}
+          <img src="{{ p.profile_picture.url }}" alt="" class="profile-avatar-lg rounded-circle mb-3">
+          {% else %}
+          <div class="profile-avatar-lg rounded-circle bg-secondary-subtle d-inline-flex align-items-center justify-content-center mb-3 fw-bold text-secondary fs-2">
+            {{ p.first_name|slice:":1" }}{{ p.last_name|slice:":1" }}
+          </div>
+          {% endif %}
+          <h1 class="h5 fw-bold mb-3">{{ p.full_name }}</h1>
+          {% if top_contacts %}
+          <ul class="list-unstyled text-start small mb-0 mx-auto" style="max-width: 280px;">
+            {% for c in top_contacts %}
+            <li class="mb-2 d-flex align-items-center gap-2">
+              <i class="bi {{ c.icon }}"></i>
+              <span class="text-break">{{ c.value }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      {% if sections.about %}
+      <div class="card profile-card border-0 shadow-sm mb-3">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-3">About me</h2>
+          {% if p.display_name %}
+          <p class="fw-semibold mb-2">{{ p.display_name }}</p>
+          {% endif %}
+          {% if p.bio %}
+          <p class="mb-3">{{ p.bio|linebreaksbr }}</p>
+          {% endif %}
+          {% if p.fun_fact_1 or p.fun_fact_2 or p.fun_fact_3 %}
+          <ul class="list-unstyled small mb-0">
+            {% if p.fun_fact_1 %}<li class="mb-2 p-2 rounded bg-light">{{ p.fun_fact_1 }}</li>{% endif %}
+            {% if p.fun_fact_2 %}<li class="mb-2 p-2 rounded bg-light">{{ p.fun_fact_2 }}</li>{% endif %}
+            {% if p.fun_fact_3 %}<li class="mb-2 p-2 rounded bg-light">{{ p.fun_fact_3 }}</li>{% endif %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if sections.lifestyle %}
+      <div class="card profile-card border-0 shadow-sm mb-3">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-3">Lifestyle / Interests</h2>
+          {% if p.hobbies %}
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            {% for h in p.hobbies %}
+            <span class="badge rounded-pill hobby-badge">{{ hobby_labels|get_item:h }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if p.weekend_activities %}
+          <p class="small text-muted mb-1">Weekend activities</p>
+          <p class="mb-3">{{ p.weekend_activities|linebreaksbr }}</p>
+          {% endif %}
+          {% if p.roommate_environment %}
+          <p class="small text-muted mb-1">Roommate environment</p>
+          <p class="mb-0">{{ p.roommate_environment|linebreaksbr }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if sections.work %}
+      <div class="card profile-card border-0 shadow-sm mb-3">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-3">Work / Financial</h2>
+          {% if p.employment_status %}
+          <p class="mb-1"><span class="text-muted small">Employment</span><br>{{ p.get_employment_status_display }}</p>
+          {% endif %}
+          {% if p.current_role %}
+          <p class="mb-1"><span class="text-muted small">Current role</span><br>{{ p.current_role }}</p>
+          {% endif %}
+          {% if p.housing_budget %}
+          <p class="mb-1"><span class="text-muted small">Housing budget</span><br>{{ p.get_housing_budget_display }}</p>
+          {% endif %}
+          {% if p.can_contribute_rent == True %}
+          <p class="mb-0 text-success small"><i class="bi bi-check-circle me-1"></i>Can reliably contribute to rent</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if sections.social %}
+      <div class="card profile-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-3">Contact &amp; social</h2>
+          <ul class="list-unstyled mb-0">
+            {% for c in sections.social_rows %}
+            <li class="mb-2 d-flex align-items-center gap-2">
+              <i class="bi {{ c.icon }}"></i>
+              <span class="text-break">{{ c.value }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

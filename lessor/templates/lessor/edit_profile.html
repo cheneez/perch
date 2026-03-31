@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit profile — Perch{% endblock %}
+
+{% block extra_head %}
+{% include 'includes/profile_photo_cropper.html' with file_input_id='id_profile_picture' %}
+{% endblock %}
+
+{% block content %}
+<div class="profile-page container-fluid py-4">
+  <h1 class="h4 fw-bold mb-4">Edit public profile</h1>
+  <form id="edit-public-form" method="post" enctype="multipart/form-data" class="row g-4">
+    {% csrf_token %}
+    {{ form.remove_photo }}
+    {% if form.non_field_errors %}
+    <div class="col-12"><div class="alert alert-danger">{{ form.non_field_errors }}</div></div>
+    {% endif %}
+
+    <div class="col-lg-6">
+      <div class="card profile-card border-0 shadow-sm mb-3">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-3">Photo</h2>
+          {{ form.profile_picture }}
+          {{ form.profile_picture.errors }}
+          <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="btnRemovePhoto">Remove photo</button>
+        </div>
+      </div>
+
+      <div class="card profile-card border-0 shadow-sm mb-3">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-3">About</h2>
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.display_name.id_for_label }}">Display name</label>
+            {{ form.display_name }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.bio.id_for_label }}">Bio</label>
+            {{ form.bio }}
+            <div class="form-text"><span id="bio-count">0</span> / 400</div>
+          </div>
+          <div class="mb-2">{{ form.fun_fact_1 }}</div>
+          <div class="mb-2">{{ form.fun_fact_2 }}</div>
+          <div class="mb-0">{{ form.fun_fact_3 }}</div>
+        </div>
+      </div>
+
+      <div class="card profile-card border-0 shadow-sm mb-3">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-3">Contact &amp; social</h2>
+          <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
+            {{ form.show_email }} <label class="form-check-label mb-0" for="{{ form.show_email.id_for_label }}">Show</label>
+            <span class="flex-grow-1">{{ form.email }}</span>
+          </div>
+          <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
+            {{ form.show_phone }} <label class="form-check-label mb-0" for="{{ form.show_phone.id_for_label }}">Show</label>
+            {{ form.phone_number }}
+          </div>
+          <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
+            {{ form.show_instagram }} <label class="form-check-label mb-0" for="{{ form.show_instagram.id_for_label }}">Show</label>
+            {{ form.instagram }}
+          </div>
+          <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
+            {{ form.show_linkedin }} <label class="form-check-label mb-0" for="{{ form.show_linkedin.id_for_label }}">Show</label>
+            {{ form.linkedin }}
+          </div>
+          <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
+            {{ form.show_handshake }} <label class="form-check-label mb-0" for="{{ form.show_handshake.id_for_label }}">Show</label>
+            {{ form.handshake }}
+          </div>
+          <div class="mb-0 d-flex flex-wrap align-items-center gap-2">
+            {{ form.show_facebook }} <label class="form-check-label mb-0" for="{{ form.show_facebook.id_for_label }}">Show</label>
+            {{ form.facebook }}
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a href="{% url 'lessor:profile' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="d-lg-none mb-2">
+        <button class="btn btn-outline-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#previewCollapse">Preview</button>
+      </div>
+      <div id="previewCollapse" class="collapse d-lg-block">
+        <div class="card profile-card border-0 shadow-sm preview-panel sticky-lg-top">
+          <div class="card-body p-4">
+            <h2 class="h6 fw-bold mb-3">Live preview</h2>
+            <div id="pv-root" class="preview-inner small border rounded-3 p-3 bg-white"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+<script>
+(function() {
+  var form = document.getElementById('edit-public-form');
+  var root = document.getElementById('pv-root');
+  var initialPic = '{{ preview_picture_url|escapejs }}';
+  var removeInput = document.getElementById('id_remove_photo');
+  var fileInput = document.getElementById('id_profile_picture');
+  var objectUrl = null;
+  var cachedFile = null;
+
+  function val(name) {
+    var el = form.querySelector('[name="' + name + '"]');
+    if (!el) return '';
+    if (el.type === 'checkbox') return el.checked;
+    return (el.value || '').trim();
+  }
+
+  function row(show, field, icon) {
+    if (!show || !val(field)) return '';
+    return '<li class="mb-1 d-flex gap-2"><i class="bi ' + icon + '"></i><span>' + escapeHtml(val(field)) + '</span></li>';
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function render() {
+    var displayName = val('display_name');
+    var bio = val('bio');
+    var f1 = val('fun_fact_1'), f2 = val('fun_fact_2'), f3 = val('fun_fact_3');
+    var about = displayName || bio || f1 || f2 || f3;
+
+    var social = '';
+    social += row(val('show_email'), 'email', 'bi-envelope');
+    social += row(val('show_phone'), 'phone_number', 'bi-telephone');
+    social += row(val('show_instagram'), 'instagram', 'bi-instagram');
+    social += row(val('show_linkedin'), 'linkedin', 'bi-linkedin');
+    social += row(val('show_handshake'), 'handshake', 'bi-mortarboard');
+    social += row(val('show_facebook'), 'facebook', 'bi-facebook');
+
+    var picHtml = '';
+    if (removeInput && removeInput.value === '1' && !fileInput.files.length) {
+      picHtml = '<div class="rounded-circle bg-secondary-subtle d-inline-flex align-items-center justify-content-center mb-2" style="width:72px;height:72px;">?</div>';
+    } else if (fileInput.files && fileInput.files[0]) {
+      var f = fileInput.files[0];
+      if (cachedFile !== f) {
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        objectUrl = URL.createObjectURL(f);
+        cachedFile = f;
+      }
+      picHtml = '<img src="' + objectUrl + '" alt="" class="rounded-circle mb-2" style="width:72px;height:72px;object-fit:cover;">';
+    } else if (initialPic) {
+      picHtml = '<img src="' + initialPic + '" alt="" class="rounded-circle mb-2" style="width:72px;height:72px;object-fit:cover;">';
+    } else {
+      picHtml = '<div class="rounded-circle bg-secondary-subtle d-inline-flex align-items-center justify-content-center mb-2" style="width:72px;height:72px;">?</div>';
+    }
+
+    var html = picHtml + '<p class="fw-bold mb-2">' + escapeHtml(displayName || 'Your name') + '</p>';
+    if (about) {
+      html += '<div class="mb-3"><strong>About</strong>';
+      if (displayName) html += '<p class="mb-1 fw-semibold">' + escapeHtml(displayName) + '</p>';
+      if (bio) html += '<p class="mb-1">' + escapeHtml(bio).replace(/\n/g, '<br>') + '</p>';
+      if (f1 || f2 || f3) {
+        html += '<ul class="list-unstyled mb-0">';
+        [f1, f2, f3].forEach(function(t) { if (t) html += '<li class="small p-1 mb-1 bg-light rounded">' + escapeHtml(t) + '</li>'; });
+        html += '</ul>';
+      }
+      html += '</div>';
+    }
+    if (social) {
+      html += '<div class="mb-0"><strong>Contact</strong><ul class="list-unstyled mb-0">' + social + '</ul></div>';
+    }
+    root.innerHTML = html || '<p class="text-muted mb-0">Fill the form to see a preview.</p>';
+  }
+
+  form.addEventListener('input', render);
+  form.addEventListener('change', render);
+  var bio = form.querySelector('[name="bio"]');
+  var bioCount = document.getElementById('bio-count');
+  function countBio() {
+    if (bio && bioCount) bioCount.textContent = (bio.value || '').length;
+  }
+  if (bio) { bio.addEventListener('input', countBio); countBio(); }
+
+  document.getElementById('btnRemovePhoto').addEventListener('click', function() {
+    if (removeInput) removeInput.value = '1';
+    if (fileInput) fileInput.value = '';
+    cachedFile = null;
+    render();
+  });
+  if (fileInput) {
+    fileInput.addEventListener('change', function() {
+      if (removeInput) removeInput.value = '0';
+    });
+  }
+  render();
+})();
+</script>
+{% endblock %}
