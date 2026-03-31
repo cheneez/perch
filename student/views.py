@@ -19,6 +19,8 @@ class StudentProfileRequiredMixin:
     """Redirect to create-profile when the student has not completed onboarding."""
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
         if not StudentProfile.objects.filter(user=request.user).exists():
             return redirect('student:create_profile')
         return super().dispatch(request, *args, **kwargs)
@@ -57,6 +59,8 @@ class StudentCreateProfileView(RoleRequiredMixin, FormView):
     success_url = reverse_lazy('student:dashboard')
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
         if StudentProfile.objects.filter(user=request.user).exists():
             return redirect('student:dashboard')
         return super().dispatch(request, *args, **kwargs)
