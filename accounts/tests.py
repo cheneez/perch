@@ -6,7 +6,11 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.core import mail
 
+from lessor.models import LessorProfile
+
 from .models import Profile
+
+
 @override_settings(
     GOOGLE_OAUTH_CLIENT_ID='test-client-id',
     GOOGLE_OAUTH_CLIENT_SECRET='test-client-secret',
@@ -129,8 +133,17 @@ class AuthFlowTests(TestCase):
             username='casey',
             email='casey@realty.com',
             password='securepass123',
+            first_name='Casey',
+            last_name='Agent',
         )
         Profile.objects.create(user=user, user_type='realtor', email_verified=True)
+        LessorProfile.objects.create(
+            user=user,
+            username=user.username,
+            first_name='Casey',
+            last_name='Agent',
+            gender_identity='prefer_not',
+        )
         self.client.force_login(user)
 
         response = self.client.get(reverse('dashboard'))
