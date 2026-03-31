@@ -7,6 +7,7 @@ urlpatterns = [
     path('<int:pk>/', views.listing_detail, name='listing-detail'),
     path('<int:pk>/edit/', views.edit_listing, name='listing-edit'),
     path('<int:pk>/delete/', views.delete_listing, name='listing-delete'),
+    path('detail/<int:pk>/', views.property_detail, name='listing-detail-legacy'),
     path('property/<int:pk>/', views.property_detail, name='property'),
 ]
 app_name = 'listings'

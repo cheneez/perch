@@ -7,7 +7,7 @@ class ListingForm(forms.ModelForm):
     class Meta:
         model = Listing
         # owner/created_at are set by the system
-        exclude = ["owner", "created_at", "verified", "avg_rating", "image_count", "video_count"]
+        exclude = ["owner", "created_at", "verified", "avg_rating", "image_count", "video_count", "latitude", "longitude"]
         widgets = {
             "title": forms.TextInput(attrs={"class": "form-control", "placeholder": "Cozy 2BR near campus"}),
             "description": forms.Textarea(
