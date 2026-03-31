@@ -58,14 +58,6 @@
 
       <div class="card profile-card border-0 shadow-sm mb-3">
         <div class="card-body p-4">
-          <h2 class="h6 fw-bold mb-3">Weekend &amp; roommate fit</h2>
-          {{ form.weekend_activities }}
-          <div class="mt-3">{{ form.roommate_environment }}</div>
-        </div>
-      </div>
-
-      <div class="card profile-card border-0 shadow-sm mb-3">
-        <div class="card-body p-4">
           <h2 class="h6 fw-bold mb-3">Work / financial</h2>
           <div class="mb-3">{{ form.employment_status }}</div>
           <div class="mb-3">{{ form.current_role }}</div>
@@ -77,29 +69,48 @@
       <div class="card profile-card border-0 shadow-sm mb-3">
         <div class="card-body p-4">
           <h2 class="h6 fw-bold mb-3">Contact &amp; social</h2>
-          <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
-            {{ form.show_email }} <label class="form-check-label mb-0" for="{{ form.show_email.id_for_label }}">Show on profile</label>
-            <span class="flex-grow-1">{{ form.email }}</span>
+          <p class="small text-muted mb-3">Add your contact details below, then choose which ones are visible on your public profile.</p>
+          <div class="mb-3">
+            <label class="form-label d-block" for="{{ form.email.id_for_label }}">Email address</label>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span class="flex-grow-1">{{ form.email }}</span>
+              {{ form.show_email }} <label class="form-check-label mb-0" for="{{ form.show_email.id_for_label }}">Show on profile</label>
+            </div>
           </div>
-          <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
-            {{ form.show_phone }} <label class="form-check-label mb-0" for="{{ form.show_phone.id_for_label }}">Show</label>
-            {{ form.phone_number }}
+          <div class="mb-3">
+            <label class="form-label d-block" for="{{ form.phone_number.id_for_label }}">Phone number</label>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span class="flex-grow-1">{{ form.phone_number }}</span>
+              {{ form.show_phone }} <label class="form-check-label mb-0" for="{{ form.show_phone.id_for_label }}">Show on profile</label>
+            </div>
           </div>
-          <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
-            {{ form.show_instagram }} <label class="form-check-label mb-0" for="{{ form.show_instagram.id_for_label }}">Show</label>
-            {{ form.instagram }}
+          <div class="mb-3">
+            <label class="form-label d-block" for="{{ form.instagram.id_for_label }}">Instagram handle</label>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span class="flex-grow-1">{{ form.instagram }}</span>
+              {{ form.show_instagram }} <label class="form-check-label mb-0" for="{{ form.show_instagram.id_for_label }}">Show on profile</label>
+            </div>
           </div>
-          <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
-            {{ form.show_linkedin }} <label class="form-check-label mb-0" for="{{ form.show_linkedin.id_for_label }}">Show</label>
-            {{ form.linkedin }}
+          <div class="mb-3">
+            <label class="form-label d-block" for="{{ form.linkedin.id_for_label }}">LinkedIn URL</label>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span class="flex-grow-1">{{ form.linkedin }}</span>
+              {{ form.show_linkedin }} <label class="form-check-label mb-0" for="{{ form.show_linkedin.id_for_label }}">Show on profile</label>
+            </div>
           </div>
-          <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
-            {{ form.show_handshake }} <label class="form-check-label mb-0" for="{{ form.show_handshake.id_for_label }}">Show</label>
-            {{ form.handshake }}
+          <div class="mb-3">
+            <label class="form-label d-block" for="{{ form.handshake.id_for_label }}"><i class="fas fa-handshake me-1" aria-hidden="true"></i>Handshake URL</label>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span class="flex-grow-1">{{ form.handshake }}</span>
+              {{ form.show_handshake }} <label class="form-check-label mb-0" for="{{ form.show_handshake.id_for_label }}">Show on profile</label>
+            </div>
           </div>
-          <div class="mb-0 d-flex flex-wrap align-items-center gap-2">
-            {{ form.show_facebook }} <label class="form-check-label mb-0" for="{{ form.show_facebook.id_for_label }}">Show</label>
-            {{ form.facebook }}
+          <div class="mb-0">
+            <label class="form-label d-block" for="{{ form.facebook.id_for_label }}">Facebook URL</label>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span class="flex-grow-1">{{ form.facebook }}</span>
+              {{ form.show_facebook }} <label class="form-check-label mb-0" for="{{ form.show_facebook.id_for_label }}">Show on profile</label>
+            </div>
           </div>
         </div>
       </div>
@@ -162,9 +173,7 @@
     var tags = vals('hobby_tags');
     var customRaw = val('hobby_custom');
     var custom = customRaw ? customRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
-    var weekend = val('weekend_activities');
-    var roomm = val('roommate_environment');
-    var lifestyle = tags.length || custom.length || weekend || roomm;
+    var lifestyle = tags.length || custom.length;
 
     var emp = selectText('employment_status');
     var role = val('current_role');
@@ -175,7 +184,8 @@
 
     function row(show, field, label, icon) {
       if (!show || !val(field)) return '';
-      return '<li class="mb-1 d-flex gap-2"><i class="bi ' + icon + '"></i><span>' + escapeHtml(val(field)) + '</span></li>';
+      var iconClass = icon.indexOf(' ') >= 0 ? icon : 'bi ' + icon;
+      return '<li class="mb-1 d-flex gap-2 align-items-center"><i class="' + iconClass + '"></i><span>' + escapeHtml(val(field)) + '</span></li>';
     }
 
     var social = '';
@@ -183,7 +193,7 @@
     social += row(val('show_phone'), 'phone_number', 'Phone', 'bi-telephone');
     social += row(val('show_instagram'), 'instagram', 'IG', 'bi-instagram');
     social += row(val('show_linkedin'), 'linkedin', 'LI', 'bi-linkedin');
-    social += row(val('show_handshake'), 'handshake', 'HS', 'bi-mortarboard');
+    social += row(val('show_handshake'), 'handshake', 'Handshake', 'fas fa-handshake');
     social += row(val('show_facebook'), 'facebook', 'FB', 'bi-facebook');
 
     var picHtml = '';
@@ -223,8 +233,6 @@
       var chips = tags.map(function(t) { return '<span class="badge rounded-pill hobby-badge me-1">' + escapeHtml(labels[t] || t) + '</span>'; }).join('');
       custom.forEach(function(t) { chips += '<span class="badge rounded-pill hobby-badge me-1">' + escapeHtml(t) + '</span>'; });
       if (chips) html += '<div class="mb-2">' + chips + '</div>';
-      if (weekend) html += '<p class="small mb-1"><span class="text-muted">Weekend</span><br>' + escapeHtml(weekend).replace(/\n/g, '<br>') + '</p>';
-      if (roomm) html += '<p class="small mb-0"><span class="text-muted">Roommate fit</span><br>' + escapeHtml(roomm).replace(/\n/g, '<br>') + '</p>';
       html += '</div>';
     }
 
