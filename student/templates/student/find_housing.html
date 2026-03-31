@@ -1,0 +1,441 @@
+{% extends 'base.html' %}
+{% block title %}Find Housing — Perch{% endblock %}
+
+{% block content %}
+<div class="fh-wrapper">
+
+  {# ── Filter bar ── #}
+  <form method="get" class="fh-filterbar">
+    <div class="fh-filter-group">
+      <label class="fh-filter-label">Price Range</label>
+      <div class="fh-price-inputs">
+        <input type="number" name="min_price" class="fh-input" placeholder="Min $"
+               value="{{ filters.min_price }}" min="0">
+        <span class="fh-price-sep">–</span>
+        <input type="number" name="max_price" class="fh-input" placeholder="Max $"
+               value="{{ filters.max_price }}" min="0">
+      </div>
+    </div>
+
+    <div class="fh-filter-group">
+      <label class="fh-filter-label">Beds</label>
+      <select name="bedrooms" class="fh-select">
+        <option value="">Any</option>
+        {% for n in "1234" %}
+          <option value="{{ n }}" {% if filters.bedrooms == n %}selected{% endif %}>{{ n }}+</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="fh-filter-group">
+      <label class="fh-filter-label">Type</label>
+      <select name="room_type" class="fh-select">
+        <option value="">Any</option>
+        <option value="room" {% if filters.room_type == "room" %}selected{% endif %}>Room</option>
+        <option value="whole_apartment" {% if filters.room_type == "whole_apartment" %}selected{% endif %}>Whole Apt</option>
+      </select>
+    </div>
+
+    <button type="submit" class="fh-btn-apply">Apply</button>
+    {% if filters %}
+      <a href="?" class="fh-btn-clear">Clear</a>
+    {% endif %}
+  </form>
+
+  {# ── Split pane ── #}
+  <div class="fh-body">
+
+    {# Left: scrollable card list #}
+    <div class="fh-list" id="fh-list">
+      <p class="fh-list-heading">
+        Available Listings
+        <span class="fh-count">{{ listings|length }}</span>
+      </p>
+
+      {% if listings %}
+        {% for listing in listings %}
+          <a href="{% url 'listings:property' listing.pk %}"
+             class="fh-card" id="fh-card-{{ listing.pk }}" data-pk="{{ listing.pk }}">
+            <div class="fh-card-img-wrap">
+              {% with img=listing.images.first %}
+                {% if img and img.image %}
+                  <img src="{{ img.image.url }}" class="fh-card-img" alt="{{ listing.title }}">
+                {% elif img and img.image_url %}
+                  <img src="{{ img.image_url }}" class="fh-card-img" alt="{{ listing.title }}">
+                {% else %}
+                  <div class="fh-card-img fh-card-img-placeholder"><i class="bi bi-image"></i></div>
+                {% endif %}
+              {% endwith %}
+              <span class="fh-price-badge">${{ listing.price_monthly|floatformat:0 }}/mo</span>
+            </div>
+            <div class="fh-card-body">
+              <p class="fh-card-title">{{ listing.title }}</p>
+              <p class="fh-card-address">{{ listing.address }}</p>
+              <div class="fh-card-meta">
+                <span><i class="bi bi-door-open"></i> {{ listing.bedrooms }} bd</span>
+                <span><i class="bi bi-droplet"></i> {{ listing.bathrooms }} ba</span>
+                {% if listing.distance_miles %}
+                  <span><i class="bi bi-geo"></i> {{ listing.distance_miles }} mi</span>
+                {% endif %}
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      {% else %}
+        <div class="fh-empty">
+          <i class="bi bi-house-slash fh-empty-icon"></i>
+          <p>No listings match your filters.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    {# Right: Leaflet map #}
+    <div class="fh-map-panel">
+      <p class="fh-list-heading">Map View</p>
+      <div id="fh-map"></div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function () {
+  var pins = {{ map_pins|safe }};
+
+  // Default centre: Boston College main campus
+  var defaultLat = 42.3355, defaultLng = -71.1685;
+  var map = L.map('fh-map', { zoomControl: true }).setView([defaultLat, defaultLng], 14);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  }).addTo(map);
+
+  // Custom house icon
+  function makeIcon(highlighted) {
+    return L.divIcon({
+      className: '',
+      html: '<div class="fh-pin' + (highlighted ? ' fh-pin-active' : '') + '"><i class="bi bi-house-fill"></i></div>',
+      iconSize: [36, 36],
+      iconAnchor: [18, 36],
+      popupAnchor: [0, -38],
+    });
+  }
+
+  var markers = {};
+  var bounds = [];
+
+  pins.forEach(function (p) {
+    var marker = L.marker([p.lat, p.lng], { icon: makeIcon(false) }).addTo(map);
+    marker.bindPopup(
+      '<div class="fh-popup">' +
+      '<strong>' + p.title + '</strong><br>' +
+      '<span class="fh-popup-price">$' + parseFloat(p.price).toLocaleString() + '/mo</span>' +
+      '</div>'
+    );
+
+    marker.on('click', function () {
+      // Highlight sidebar card
+      document.querySelectorAll('.fh-card').forEach(function (c) { c.classList.remove('fh-card-active'); });
+      var card = document.getElementById('fh-card-' + p.pk);
+      if (card) {
+        card.classList.add('fh-card-active');
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      // Update all icons
+      Object.keys(markers).forEach(function (k) {
+        markers[k].setIcon(makeIcon(k === String(p.pk)));
+      });
+    });
+
+    markers[p.pk] = marker;
+    bounds.push([p.lat, p.lng]);
+  });
+
+  if (bounds.length) {
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+  }
+
+  // Clicking a card pans map to that listing
+  document.querySelectorAll('.fh-card[data-pk]').forEach(function (card) {
+    card.addEventListener('click', function (e) {
+      var pk = card.dataset.pk;
+      if (markers[pk]) {
+        e.preventDefault();
+        map.panTo(markers[pk].getLatLng(), { animate: true });
+        markers[pk].openPopup();
+        document.querySelectorAll('.fh-card').forEach(function (c) { c.classList.remove('fh-card-active'); });
+        card.classList.add('fh-card-active');
+        Object.keys(markers).forEach(function (k) {
+          markers[k].setIcon(makeIcon(k === pk));
+        });
+        // Navigate after short delay so user sees the map pan
+        setTimeout(function () { window.location.href = card.href; }, 600);
+      }
+    });
+  });
+})();
+</script>
+
+<style>
+/* ── Layout ── */
+.fh-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px); /* subtract navbar */
+  overflow: hidden;
+  padding: 0;
+}
+
+.fh-filterbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e4e4e4;
+  flex-shrink: 0;
+}
+
+.fh-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fh-filter-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.fh-price-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fh-price-sep { color: #aaa; font-size: 0.85rem; }
+
+.fh-input, .fh-select {
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.fh-input { width: 90px; }
+.fh-select { min-width: 110px; }
+.fh-input:focus, .fh-select:focus { border-color: #0f1f4b; }
+
+.fh-btn-apply {
+  background: #0f1f4b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 18px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.fh-btn-apply:hover { background: #1a3070; }
+
+.fh-btn-clear {
+  color: #6c757d;
+  font-size: 0.82rem;
+  text-decoration: none;
+  padding: 7px 4px;
+}
+.fh-btn-clear:hover { color: #0f1f4b; }
+
+/* ── Body split ── */
+.fh-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── List panel ── */
+.fh-list {
+  width: 360px;
+  min-width: 280px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 16px 14px;
+  background: #f8f9fa;
+  border-right: 1px solid #e4e4e4;
+}
+
+.fh-list-heading {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fh-count {
+  background: #e9ecef;
+  color: #495057;
+  border-radius: 20px;
+  padding: 1px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ── Cards ── */
+.fh-card {
+  display: block;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  transition: box-shadow 0.18s, transform 0.18s;
+  border: 2px solid transparent;
+}
+.fh-card:hover {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.13);
+  transform: translateY(-1px);
+}
+.fh-card-active {
+  border-color: #0f1f4b;
+}
+
+.fh-card-img-wrap {
+  position: relative;
+}
+.fh-card-img {
+  width: 100%;
+  height: 170px;
+  object-fit: cover;
+  display: block;
+}
+.fh-card-img-placeholder {
+  width: 100%;
+  height: 170px;
+  background: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #adb5bd;
+}
+
+.fh-price-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.fh-card-body {
+  padding: 10px 12px 12px;
+}
+.fh-card-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0 0 2px;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fh-card-address {
+  font-size: 0.78rem;
+  color: #6c757d;
+  margin: 0 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fh-card-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 0.75rem;
+  color: #495057;
+}
+.fh-card-meta i { margin-right: 2px; }
+
+/* ── Empty state ── */
+.fh-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #adb5bd;
+}
+.fh-empty-icon { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+
+/* ── Map panel ── */
+.fh-map-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 14px;
+  overflow: hidden;
+}
+
+#fh-map {
+  flex: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+}
+
+/* ── Map pins ── */
+.fh-pin {
+  width: 34px;
+  height: 34px;
+  background: #fff;
+  border: 2px solid #0f1f4b;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  transition: background 0.15s, border-color 0.15s;
+}
+.fh-pin i {
+  transform: rotate(45deg);
+  font-size: 15px;
+  color: #0f1f4b;
+}
+.fh-pin-active {
+  background: #0f1f4b;
+  border-color: #0f1f4b;
+}
+.fh-pin-active i { color: #fff; }
+
+/* ── Popup ── */
+.fh-popup { font-size: 0.82rem; min-width: 120px; }
+.fh-popup-price { color: #0f1f4b; font-weight: 600; }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .fh-body { flex-direction: column; }
+  .fh-list { width: 100%; border-right: none; border-bottom: 1px solid #e4e4e4; max-height: 45vh; }
+  .fh-map-panel { padding: 8px; }
+}
+</style>
+{% endblock %}

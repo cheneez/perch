@@ -1,9 +1,31 @@
+import json
+import urllib.parse
+import urllib.request
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import ListingForm
 from .models import Listing, ListingImage
+
+
+def _geocode(address):
+    """Return (lat, lng) for address using Nominatim, or (None, None) on failure."""
+    url = (
+        "https://nominatim.openstreetmap.org/search?q="
+        + urllib.parse.quote(address)
+        + "&format=json&limit=1"
+    )
+    req = urllib.request.Request(url, headers={"User-Agent": "perch-housing-app/1.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            results = json.loads(resp.read())
+            if results:
+                return float(results[0]["lat"]), float(results[0]["lon"])
+    except Exception:
+        pass
+    return None, None
 
 @login_required
 def create_listing(request):
@@ -13,6 +35,10 @@ def create_listing(request):
             listing = form.save(commit=False)
             listing.owner = request.user
             listing.save()
+
+            lat, lng = _geocode(listing.address)
+            if lat is not None:
+                Listing.objects.filter(pk=listing.pk).update(latitude=lat, longitude=lng)
 
             images = request.FILES.getlist("images")
             for image in images:
@@ -44,7 +70,12 @@ def edit_listing(request, pk):
     if request.method == "POST":
         form = ListingForm(request.POST, request.FILES, instance=listing)
         if form.is_valid():
-            form.save()
+            listing = form.save()
+
+            if listing.latitude is None or "address" in form.changed_data:
+                lat, lng = _geocode(listing.address)
+                if lat is not None:
+                    Listing.objects.filter(pk=listing.pk).update(latitude=lat, longitude=lng)
 
             delete_ids = request.POST.getlist("delete_images")
             if delete_ids:
@@ -74,7 +105,6 @@ def delete_listing(request, pk):
     # Basic fallback: redirect back if someone visits GET.
     return redirect("listings:listing-detail", pk=pk)
 
-@login_required
 def property_detail(request, pk):
     listing = get_object_or_404(Listing, pk=pk)
     return render(request, 'listings/property.html', {'listing': listing})
