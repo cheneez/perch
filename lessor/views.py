@@ -13,6 +13,8 @@ from .models import LessorProfile
 
 class LessorProfileRequiredMixin:
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
         if not LessorProfile.objects.filter(user=request.user).exists():
             return redirect('lessor:create_profile')
         return super().dispatch(request, *args, **kwargs)
@@ -60,6 +62,8 @@ class LessorCreateProfileView(RoleRequiredMixin, FormView):
     success_url = reverse_lazy('lessor:dashboard')
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
         if LessorProfile.objects.filter(user=request.user).exists():
             return redirect('lessor:dashboard')
         return super().dispatch(request, *args, **kwargs)
