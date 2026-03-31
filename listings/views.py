@@ -106,5 +106,5 @@ def delete_listing(request, pk):
     return redirect("listings:listing-detail", pk=pk)
 
 def property_detail(request, pk):
-    listing = get_object_or_404(Listing, pk=pk)
+    listing = get_object_or_404(Listing.objects.accessible_to(request.user), pk=pk)
     return render(request, 'listings/property.html', {'listing': listing})

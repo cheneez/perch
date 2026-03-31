@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Report {{ target_type }} — Perch{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 720px;">
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4 p-lg-5">
+      <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+        <div>
+          <h1 class="h4 fw-bold mb-1">Report {{ target_type }}</h1>
+          <p class="text-muted mb-0">Admins will review this report and take action if needed.</p>
+        </div>
+      </div>
+
+      <div class="rounded-3 bg-light px-3 py-2 mb-4">
+        <span class="small text-muted d-block mb-1">Reported item</span>
+        <strong>{{ target }}</strong>
+      </div>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.next }}
+        <div class="mb-3">
+          <label for="{{ form.reason.id_for_label }}" class="form-label fw-semibold">Reason</label>
+          {{ form.reason }}
+          {% if form.reason.errors %}
+          <div class="text-danger small mt-1">{{ form.reason.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+        <div class="mb-4">
+          <label for="{{ form.details.id_for_label }}" class="form-label fw-semibold">Details</label>
+          {{ form.details }}
+          {% if form.details.errors %}
+          <div class="text-danger small mt-1">{{ form.details.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-danger" type="submit">Submit report</button>
+          <a class="btn btn-outline-secondary" href="{{ form.next.value|default:request.META.HTTP_REFERER|default:'/' }}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

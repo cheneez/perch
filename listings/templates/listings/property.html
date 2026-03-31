@@ -9,6 +9,14 @@
   <!-- Page header -->
   <div class="mb-4">
     <h2 class="fw-bold mb-0">{{ listing.address }}</h2>
+    <div class="mt-2 d-flex flex-wrap gap-2">
+      {% if listing.verified %}
+      <span class="badge text-bg-success">Approved listing</span>
+      {% endif %}
+      <a class="btn btn-sm btn-outline-danger rounded-pill" href="{% url 'moderation:report_object' 'listings' 'listing' listing.pk %}?next={{ request.path }}">
+        <i class="bi bi-flag me-1"></i>Report listing
+      </a>
+    </div>
   </div>
 
   <!-- Image Carousel -->

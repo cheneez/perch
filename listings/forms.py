@@ -7,7 +7,22 @@ class ListingForm(forms.ModelForm):
     class Meta:
         model = Listing
         # owner/created_at are set by the system
+<<<<<<< HEAD
         exclude = ["owner", "created_at", "verified", "avg_rating", "image_count", "video_count", "latitude", "longitude"]
+=======
+        exclude = [
+            "owner",
+            "created_at",
+            "verified",
+            "moderation_status",
+            "moderated_at",
+            "moderated_by",
+            "moderation_notes",
+            "avg_rating",
+            "image_count",
+            "video_count",
+        ]
+>>>>>>> f8eb83b (setting up admin interface and moderation (reports) please go to base url and add /admin to teh end to play around with the admin UI to check if it's good)
         widgets = {
             "title": forms.TextInput(attrs={"class": "form-control", "placeholder": "Cozy 2BR near campus"}),
             "description": forms.Textarea(
@@ -40,4 +55,3 @@ class ListingForm(forms.ModelForm):
             "has_laundry": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "has_ac_heat": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
-
