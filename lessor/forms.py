@@ -156,12 +156,24 @@ class LessorEditProfileForm(forms.ModelForm):
             'fun_fact_1': forms.TextInput(attrs={'class': 'form-control'}),
             'fun_fact_2': forms.TextInput(attrs={'class': 'form-control'}),
             'fun_fact_3': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'instagram': forms.TextInput(attrs={'class': 'form-control'}),
-            'linkedin': forms.URLInput(attrs={'class': 'form-control'}),
-            'handshake': forms.URLInput(attrs={'class': 'form-control'}),
-            'facebook': forms.URLInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(
+                attrs={'class': 'form-control', 'placeholder': 'name@example.com'}
+            ),
+            'phone_number': forms.TextInput(
+                attrs={'class': 'form-control', 'placeholder': '(555) 123-4567'}
+            ),
+            'instagram': forms.TextInput(
+                attrs={'class': 'form-control', 'placeholder': '@yourhandle'}
+            ),
+            'linkedin': forms.URLInput(
+                attrs={'class': 'form-control', 'placeholder': 'https://linkedin.com/in/your-name'}
+            ),
+            'handshake': forms.URLInput(
+                attrs={'class': 'form-control', 'placeholder': 'https://app.joinhandshake.com/...'}
+            ),
+            'facebook': forms.URLInput(
+                attrs={'class': 'form-control', 'placeholder': 'https://facebook.com/your.profile'}
+            ),
             'show_email': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'show_phone': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'show_instagram': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
