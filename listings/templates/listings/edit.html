@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Edit Listing — Housing Platform{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-1">Edit Listing</h2>
+      <p class="text-muted small mb-0">{{ listing.title }} - {{ listing.address }}</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 col-lg-10 col-xl-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          {% if form.errors %}
+            <div class="alert alert-danger">
+              Please fix the highlighted fields and try again.
+            </div>
+          {% endif %}
+
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% include "listings/_listing_form_fields.html" %}
+
+            {% if listing.images.all %}
+              <h5 class="mt-4 mb-3">Existing Photos</h5>
+              <div class="row g-2 mb-3">
+                {% for img in listing.images.all %}
+                  <div class="col-6 col-md-4">
+                    <div class="border rounded p-2">
+                      {% if img.image %}
+                        <img src="{{ img.image.url }}" class="img-fluid rounded mb-2" style="height: 120px; width: 100%; object-fit: cover;" alt="Existing photo">
+                      {% elif img.image_url %}
+                        <img src="{{ img.image_url }}" class="img-fluid rounded mb-2" style="height: 120px; width: 100%; object-fit: cover;" alt="Existing photo">
+                      {% endif %}
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="delete_images" value="{{ img.id }}" id="delete-image-{{ img.id }}">
+                        <label class="form-check-label small" for="delete-image-{{ img.id }}">
+                          Delete photo
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-end gap-2 mt-3">
+              <a href="{% url 'listings:listing-detail' listing.pk %}" class="btn btn-outline-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+          </form>
+
+          <hr class="my-4">
+
+          <form method="post" action="{% url 'listings:listing-delete' listing.pk %}"
+                onsubmit="return confirm('Delete this listing permanently?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger w-100">Delete Listing</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
