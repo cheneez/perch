@@ -1,0 +1,23 @@
+{% load i18n %}
+<div class="perch-quick-grid">
+  {% for group in dashboard_quick_access %}
+  <section class="perch-quick-card">
+    <h3 class="perch-quick-card-title">{{ group.title }}</h3>
+    <ul class="perch-model-list">
+      {% for item in group.items %}
+      <li class="perch-model-row">
+        <div class="perch-model-copy">
+          <a href="{{ item.admin_url }}">{{ item.label }}</a>
+        </div>
+        <div class="perch-model-actions">
+          {% if item.add_url %}
+          <a class="perch-chip perch-chip--ghost" href="{{ item.add_url }}">{% translate 'Add' %}</a>
+          {% endif %}
+          <a class="perch-chip" href="{{ item.admin_url }}">{% translate 'Manage' %}</a>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+</div>

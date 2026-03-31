@@ -1,0 +1,819 @@
+:root {
+  --perch-admin-navy: #10214f;
+  --perch-admin-navy-2: #183270;
+  --perch-admin-gold: #c9932a;
+  --perch-admin-cream: #f7f2ea;
+  --perch-admin-ink: #18233d;
+  --perch-admin-muted: #69748f;
+  --perch-admin-border: #d9dfef;
+  --perch-admin-card: rgba(255, 255, 255, 0.9);
+  --perch-admin-shadow: 0 18px 40px rgba(16, 33, 79, 0.09);
+  --perch-admin-shadow-soft: 0 8px 24px rgba(16, 33, 79, 0.06);
+}
+
+html, body {
+  min-height: 100%;
+}
+
+body.perch-admin-shell {
+  background:
+    radial-gradient(circle at top left, rgba(201, 147, 42, 0.14), transparent 32%),
+    radial-gradient(circle at top right, rgba(24, 50, 112, 0.18), transparent 24%),
+    linear-gradient(180deg, #f8f4ef 0%, #edf2fa 100%);
+  color: var(--perch-admin-ink);
+  font-family: 'DM Sans', sans-serif;
+}
+
+/*
+ * Django admin base.css sets `a:not(...) { text-decoration: underline }` on most links.
+ * Reset globally, then re-enable underline only on hover for prose/navigation links.
+ */
+body.perch-admin-shell a,
+body.perch-admin-shell a:link,
+body.perch-admin-shell a:visited,
+body.perch-admin-shell a:focus {
+  color: var(--perch-admin-navy-2);
+  text-decoration: none !important;
+}
+
+body.perch-admin-shell a.perch-brandmark,
+body.perch-admin-shell a.perch-brandmark:link,
+body.perch-admin-shell a.perch-brandmark:visited {
+  color: #fff !important;
+}
+
+body.perch-admin-shell .perch-breadcrumbs a:hover,
+body.perch-admin-shell .perch-breadcrumbs a:focus-visible,
+body.perch-admin-shell #content a:not(.perch-stat-card):not(.perch-admin-link-card):not(.perch-chip):not(.perch-user-menu-item):hover,
+body.perch-admin-shell #content a:not(.perch-stat-card):not(.perch-admin-link-card):not(.perch-chip):not(.perch-user-menu-item):focus-visible {
+  text-decoration: underline !important;
+  text-underline-offset: 0.14em;
+}
+
+body.perch-admin-shell #content ul.object-tools a:hover,
+body.perch-admin-shell #content ul.object-tools a:focus-visible {
+  text-decoration: none !important;
+}
+
+body.perch-admin-shell a.perch-stat-card:focus-visible,
+body.perch-admin-shell a.perch-admin-link-card:focus-visible {
+  outline: 2px solid var(--perch-admin-gold);
+  outline-offset: 3px;
+}
+
+.perch-admin-app {
+  min-height: 100vh;
+}
+
+.perch-shell {
+  width: min(1400px, calc(100vw - 48px));
+  margin: 0 auto;
+  padding-inline: 0;
+}
+
+.perch-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: linear-gradient(135deg, var(--perch-admin-navy), var(--perch-admin-navy-2));
+  box-shadow: 0 10px 28px rgba(16, 33, 79, 0.2);
+}
+
+.perch-topbar-inner {
+  width: min(1400px, calc(100vw - 48px));
+  margin: 0 auto;
+  padding-inline: 0;
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.perch-topbar-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.perch-user-menu {
+  position: relative;
+}
+
+.perch-user-menu summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.perch-user-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.perch-user-menu-trigger {
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.95);
+  display: inline-flex;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem 0.5rem 1.1rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.perch-user-menu-trigger:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.perch-user-menu[open] .perch-user-menu-trigger {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.perch-user-menu-label {
+  font-size: 0.95rem;
+}
+
+.perch-user-menu-label strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.perch-user-menu-chevron {
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid rgba(255, 255, 255, 0.85);
+  height: 0;
+  margin-left: 0.15rem;
+  transition: transform 0.2s ease;
+  width: 0;
+}
+
+.perch-user-menu[open] .perch-user-menu-chevron {
+  transform: rotate(180deg);
+}
+
+.perch-user-menu-panel {
+  background: #fff;
+  border: 1px solid rgba(217, 223, 239, 0.95);
+  border-radius: 16px;
+  box-shadow: var(--perch-admin-shadow);
+  margin-top: 0.55rem;
+  min-width: 15.5rem;
+  padding: 0.4rem;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 200;
+}
+
+.perch-user-menu-item {
+  border-radius: 12px;
+  color: var(--perch-admin-navy-2) !important;
+  display: block;
+  font-size: 0.92rem;
+  padding: 0.65rem 0.9rem;
+  text-decoration: none !important;
+}
+
+.perch-user-menu-item:hover,
+.perch-user-menu-item:focus-visible {
+  background: #f3f0ea;
+  text-decoration: none !important;
+}
+
+.perch-user-menu-form {
+  border-top: 1px solid rgba(217, 223, 239, 0.9);
+  margin: 0.35rem 0 0;
+  padding-top: 0.45rem;
+}
+
+.perch-user-menu-item--button {
+  background: transparent;
+  border: 0;
+  color: var(--perch-admin-navy-2);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+.perch-user-menu-item--button:hover,
+.perch-user-menu-item--button:focus-visible {
+  background: #f3f0ea;
+}
+
+.perch-brandblock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.perch-brandmark {
+  color: #fff !important;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.perch-topbar .perch-brand-subtitle {
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.92rem;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.perch-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--perch-admin-gold);
+  margin: 0 0 0.3rem;
+}
+
+.perch-breadcrumbs-wrap {
+  padding: 1rem 0 0;
+}
+
+.perch-breadcrumbs {
+  align-items: center;
+  color: var(--perch-admin-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+}
+
+.perch-page {
+  padding: 1.25rem 0 3rem;
+}
+
+.perch-content-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+.colMS {
+  grid-template-columns: minmax(0, 1fr) 310px;
+  align-items: start;
+}
+
+.perch-content-surface {
+  background: var(--perch-admin-card);
+  border: 1px solid rgba(217, 223, 239, 0.9);
+  border-radius: 28px;
+  box-shadow: var(--perch-admin-shadow);
+  padding: clamp(1.25rem, 2vw, 2rem);
+}
+
+.dashboard .perch-content-surface {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.perch-page-heading h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  line-height: 1.05;
+  margin: 0;
+  color: var(--perch-admin-navy);
+}
+
+.perch-dashboard-header {
+  margin: 0 0 1.75rem;
+  padding: 0;
+}
+
+.perch-dashboard-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0;
+  color: var(--perch-admin-navy);
+}
+
+.perch-page-subtitle {
+  color: var(--perch-admin-muted);
+  max-width: 700px;
+}
+
+.perch-admin-grid,
+.perch-admin-links {
+  display: grid;
+  gap: 1rem;
+}
+
+.perch-admin-grid {
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  margin-bottom: 2.25rem;
+}
+
+.perch-admin-links {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin: 1.15rem 0 1.4rem;
+}
+
+.perch-stat-card,
+.perch-admin-link-card,
+.perch-admin-panel,
+.perch-app-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(217, 223, 239, 0.94);
+  border-radius: 24px;
+  box-shadow: var(--perch-admin-shadow);
+}
+
+.perch-stat-card,
+.perch-admin-link-card {
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 1.35rem 1.25rem;
+  text-decoration: none !important;
+}
+
+.perch-stat-card:hover,
+.perch-admin-link-card:hover,
+.perch-app-card:hover {
+  transform: translateY(-1px);
+}
+
+.perch-stat-value {
+  color: var(--perch-admin-navy);
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.perch-stat-label,
+.perch-admin-link-card span,
+.perch-muted {
+  color: var(--perch-admin-muted);
+}
+
+.perch-admin-link-card strong,
+.perch-panel-head h2,
+.perch-app-card h3 {
+  color: var(--perch-admin-navy);
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.perch-dashboard-workspace {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+}
+
+.perch-quick-grid {
+  display: grid;
+  gap: 1.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
+
+.perch-quick-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(217, 223, 239, 0.88);
+  border-radius: 24px;
+  box-shadow: var(--perch-admin-shadow-soft);
+  padding: 1.4rem 1.5rem 1.55rem;
+}
+
+.perch-quick-card-title {
+  border-bottom: 1px solid rgba(217, 223, 239, 0.75);
+  color: var(--perch-admin-navy);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  padding-bottom: 0.75rem;
+}
+
+.perch-admin-panel {
+  padding: 1.5rem 1.6rem;
+}
+
+.perch-admin-panel--main {
+  min-width: 0;
+}
+
+.perch-panel-head {
+  margin-bottom: 1.35rem;
+}
+
+.perch-app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.perch-app-card {
+  padding: 1rem;
+}
+
+.perch-app-card-head {
+  margin-bottom: 0.9rem;
+}
+
+.perch-model-list {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.perch-model-row {
+  align-items: center;
+  background: #faf8f5;
+  border: 1px solid rgba(229, 221, 207, 0.85);
+  border-radius: 18px;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 1rem 1.15rem;
+}
+
+.perch-model-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.perch-chip {
+  background: var(--perch-admin-navy);
+  border-radius: 999px;
+  color: #fff !important;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.45rem 0.75rem;
+  text-decoration: none;
+}
+
+.perch-chip--ghost {
+  background: #fff;
+  border: 1px solid var(--perch-admin-border);
+  color: var(--perch-admin-navy) !important;
+}
+
+.perch-action-list {
+  display: grid;
+  gap: 0.85rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.perch-action-list li {
+  background: #faf8f5;
+  border: 1px solid rgba(229, 221, 207, 0.85);
+  border-radius: 18px;
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.05rem;
+}
+
+.perch-action-list span {
+  color: var(--perch-admin-muted);
+  font-size: 0.86rem;
+}
+
+.messagelist {
+  margin: 0 0 1rem;
+}
+
+.messagelist li {
+  border-radius: 16px;
+  box-shadow: 0 10px 24px rgba(16, 33, 79, 0.08);
+}
+
+#content h1,
+#content h2,
+#content h3 {
+  color: var(--perch-admin-navy);
+}
+
+.module,
+#changelist-filter,
+#changelist .actions,
+.submit-row,
+.inline-group,
+#content-related {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(217, 223, 239, 0.88);
+  border-radius: 22px;
+  box-shadow: var(--perch-admin-shadow-soft);
+}
+
+#content-related {
+  margin-top: 0;
+  padding: 1rem;
+}
+
+.module table,
+#changelist table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+#changelist table thead th,
+.module caption,
+.module h2,
+.inline-group h2 {
+  background: transparent;
+  color: var(--perch-admin-navy);
+}
+
+#changelist-filter h2 {
+  color: var(--perch-admin-navy);
+  font-size: 1rem;
+  padding: 0.8rem 1rem 0;
+}
+
+#changelist-filter li.selected a {
+  color: var(--perch-admin-gold);
+}
+
+.button,
+input[type=submit],
+input[type=button],
+.submit-row input,
+a.button {
+  background: var(--perch-admin-navy);
+  border-radius: 999px;
+  border: 0;
+}
+
+.button.default,
+input[type=submit].default,
+.submit-row input.default {
+  background: var(--perch-admin-gold);
+}
+
+input,
+textarea,
+select,
+.vTextField {
+  border-radius: 14px !important;
+}
+
+#nav-sidebar,
+.toggle-nav-sidebar {
+  display: none !important;
+}
+
+#footer {
+  padding: 0 0 2rem;
+}
+
+body.perch-admin-shell #container {
+  width: 100%;
+}
+
+body.perch-admin-shell #content {
+  float: none;
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+}
+
+/* Align Django admin internals with Perch (changelist / forms). */
+body.perch-admin-shell {
+  --body-bg: #f8f4ef;
+  --body-fg: var(--perch-admin-ink);
+  --body-quiet-color: var(--perch-admin-muted);
+  --hairline-color: rgba(24, 50, 112, 0.12);
+  --border-color: var(--perch-admin-border);
+  --darkened-bg: #f0ebe3;
+  --link-fg: var(--perch-admin-navy-2);
+  --selected-bg: rgba(201, 147, 42, 0.12);
+  --selected-row: rgba(16, 33, 79, 0.04);
+}
+
+body.perch-admin-shell .perch-changelist,
+body.perch-admin-shell .perch-change-form,
+body.perch-admin-shell .perch-app-list-page {
+  max-width: 100%;
+}
+
+body.perch-admin-shell ul.object-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+body.perch-admin-shell ul.object-tools a {
+  background: var(--perch-admin-navy);
+  border-radius: 999px;
+  color: #fff !important;
+  display: inline-block;
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 0.45rem 1rem;
+  text-decoration: none !important;
+}
+
+body.perch-admin-shell ul.object-tools a:hover,
+body.perch-admin-shell ul.object-tools a:focus-visible {
+  background: var(--perch-admin-navy-2);
+}
+
+body.perch-admin-shell ul.object-tools a.addlink {
+  background: var(--perch-admin-gold);
+  color: #fff !important;
+}
+
+body.perch-admin-shell #toolbar {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(217, 223, 239, 0.9);
+  border-radius: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.65rem 1rem;
+}
+
+body.perch-admin-shell #toolbar form input {
+  border: 1px solid var(--perch-admin-border);
+  border-radius: 12px;
+  padding: 0.45rem 0.75rem;
+}
+
+body.perch-admin-shell #changelist .module {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+body.perch-admin-shell #changelist #result_list {
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+body.perch-admin-shell #changelist table {
+  background: #fff;
+  border: 1px solid rgba(217, 223, 239, 0.95);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+body.perch-admin-shell #changelist table thead th {
+  background: rgba(16, 33, 79, 0.06);
+  border-bottom: 1px solid rgba(217, 223, 239, 0.95);
+  color: var(--perch-admin-navy);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.75rem 0.85rem;
+  text-transform: uppercase;
+}
+
+body.perch-admin-shell #changelist table tbody tr:nth-child(even) {
+  background: rgba(16, 33, 79, 0.02);
+}
+
+body.perch-admin-shell #changelist table tbody td {
+  border-bottom: 1px solid rgba(217, 223, 239, 0.55);
+  padding: 0.65rem 0.85rem;
+}
+
+body.perch-admin-shell #changelist .paginator {
+  background: transparent;
+  border: 0;
+  color: var(--perch-admin-muted);
+  margin-top: 0.75rem;
+}
+
+body.perch-admin-shell #changelist .paginator a {
+  border-radius: 8px;
+  padding: 0.2rem 0.45rem;
+}
+
+body.perch-admin-shell #changelist .actions {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(217, 223, 239, 0.9);
+  border-radius: 16px;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+body.perch-admin-shell #changelist-filter {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(217, 223, 239, 0.88) !important;
+  border-radius: 20px;
+  padding: 1rem 1rem 1.15rem !important;
+}
+
+body.perch-admin-shell #changelist-filter h2 {
+  border-bottom: 1px solid rgba(217, 223, 239, 0.75);
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+body.perch-admin-shell #changelist-filter h3 {
+  color: var(--perch-admin-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 1rem 0 0.4rem;
+  text-transform: uppercase;
+}
+
+body.perch-admin-shell #changelist-filter ul {
+  margin: 0;
+  padding: 0.15rem 0 0;
+}
+
+body.perch-admin-shell #changelist-filter li {
+  border-radius: 10px;
+  line-height: 1.45;
+  margin: 0.2rem 0;
+  padding: 0.4rem 0.45rem;
+}
+
+body.perch-admin-shell #changelist-filter li.selected {
+  background: rgba(201, 147, 42, 0.1);
+}
+
+body.perch-admin-shell.change-form .module,
+body.perch-admin-shell.change-form .inline-group {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(217, 223, 239, 0.94);
+  border-radius: 22px;
+  margin-bottom: 1rem;
+  padding: 1rem 1.15rem;
+}
+
+body.perch-admin-shell.change-form .aligned label {
+  color: var(--perch-admin-ink);
+  font-weight: 500;
+}
+
+body.perch-admin-shell.change-form .submit-row {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(217, 223, 239, 0.94);
+  border-radius: 22px;
+  margin-top: 1rem;
+  padding: 1rem 1.15rem;
+}
+
+body.perch-admin-shell .errornote,
+body.perch-admin-shell .errorlist {
+  border-radius: 14px;
+}
+
+body.perch-admin-shell .perch-app-list-page .perch-app-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+
+body.perch-admin-shell.delete-confirmation .perch-delete-confirm {
+  max-width: 52rem;
+}
+
+body.perch-admin-shell.delete-confirmation .perch-delete-confirm input[type="submit"],
+body.perch-admin-shell.delete-confirmation .perch-delete-confirm .button {
+  border-radius: 999px;
+  margin-right: 0.5rem;
+}
+
+@media (max-width: 960px) {
+  .colMS,
+  .perch-dashboard-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .perch-topbar-inner,
+  .perch-shell {
+    width: min(100vw - 20px, 1400px);
+  }
+
+  .perch-content-surface {
+    border-radius: 22px;
+    padding: 1rem;
+  }
+
+  .perch-model-row {
+    grid-template-columns: 1fr;
+  }
+}

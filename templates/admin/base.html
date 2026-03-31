@@ -1,0 +1,105 @@
+{% load i18n static %}
+<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}{% get_current_language_bidi as LANGUAGE_BIDI %}
+<html lang="{{ LANGUAGE_CODE|default:'en-us' }}" dir="{{ LANGUAGE_BIDI|yesno:'rtl,ltr,auto' }}">
+<head>
+<title>{% block title %}{% endblock %}</title>
+<link rel="stylesheet" href="{% block stylesheet %}{% static 'admin/css/base.css' %}{% endblock %}">
+{% if LANGUAGE_BIDI %}<link rel="stylesheet" href="{% block stylesheet_rtl %}{% static 'admin/css/rtl.css' %}{% endblock %}">{% endif %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+{% block dark-mode-vars %}
+<link rel="stylesheet" href="{% static 'admin/css/dark_mode.css' %}">
+<script src="{% static 'admin/js/theme.js' %}"></script>
+{% endblock %}
+{% block extrastyle %}{% endblock %}
+{% block extrahead %}{% endblock %}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="{% static 'admin/css/responsive.css' %}">
+{% if LANGUAGE_BIDI %}<link rel="stylesheet" href="{% static 'admin/css/responsive_rtl.css' %}">{% endif %}
+{% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE">{% endblock %}
+</head>
+<body class="perch-admin-shell {% if is_popup %}popup{% endif %} {% block bodyclass %}{% endblock %}" data-admin-utc-offset="{% now 'Z' %}">
+<a href="#content-start" class="skip-to-content-link">{% translate 'Skip to main content' %}</a>
+
+<div class="perch-admin-app">
+  {% if not is_popup %}
+  <header class="perch-topbar">
+    <div class="perch-topbar-inner">
+      <div class="perch-brandblock">
+        <a class="perch-brandmark" href="{% url 'admin:index' %}">Perch Admin</a>
+        <p class="perch-brand-subtitle">Moderation, listings, and account oversight.</p>
+      </div>
+
+      {% if has_permission %}
+      <div class="perch-topbar-actions">
+        <details class="perch-user-menu">
+          <summary class="perch-user-menu-trigger">
+            <span class="perch-user-menu-label">{% translate 'Welcome,' %} <strong>{% firstof user.get_short_name user.get_username %}</strong></span>
+            <span class="perch-user-menu-chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="perch-user-menu-panel">
+            {% if site_url %}
+            <a class="perch-user-menu-item" href="{{ site_url }}">{% translate 'Go to main site' %}</a>
+            {% endif %}
+            {% if user.has_usable_password %}
+            <a class="perch-user-menu-item" href="{% url 'admin:password_change' %}">{% translate 'Change password' %}</a>
+            {% endif %}
+            <form class="perch-user-menu-form" method="post" action="{% url 'admin:logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="perch-user-menu-item perch-user-menu-item--button">{% translate 'Log out' %}</button>
+            </form>
+          </div>
+        </details>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+
+  {% block nav-breadcrumbs %}
+  <nav class="perch-breadcrumbs-wrap" aria-label="{% translate 'Breadcrumbs' %}">
+    <div class="perch-shell">
+      {% block breadcrumbs %}
+      <div class="perch-breadcrumbs">
+        <a href="{% url 'admin:index' %}">{% translate 'Dashboard' %}</a>
+        {% if title %}<span>&rsaquo;</span><span>{{ title }}</span>{% endif %}
+      </div>
+      {% endblock %}
+    </div>
+  </nav>
+  {% endblock %}
+  {% endif %}
+
+  <main class="perch-page">
+    <div class="perch-shell">
+      {% block messages %}
+        {% if messages %}
+        <ul class="messagelist">
+          {% for message in messages %}
+          <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|capfirst }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      {% endblock %}
+
+      <div class="perch-content-wrap {% block coltype %}colM{% endblock %}">
+        <section id="content-start" class="perch-content-surface" tabindex="-1">
+          {% block pretitle %}{% endblock %}
+          {% block content_title %}{% if title %}<div class="perch-page-heading"><h1>{{ title }}</h1></div>{% endif %}{% endblock %}
+          {% block content_subtitle %}{% if subtitle %}<p class="perch-page-subtitle">{{ subtitle }}</p>{% endif %}{% endblock %}
+          <div id="content" class="perch-content-body">
+            {% block content %}
+              {% block object-tools %}{% endblock %}
+              {{ content }}
+            {% endblock %}
+          </div>
+        </section>
+        {% block sidebar %}{% endblock %}
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

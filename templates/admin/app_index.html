@@ -1,0 +1,33 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | Perch Admin{% endblock %}
+{% block bodyclass %}{{ block.super }} app-{{ app_label }}{% endblock %}
+
+{% if not is_popup %}
+{% block nav-breadcrumbs %}
+  <nav class="perch-breadcrumbs-wrap" aria-label="{% translate 'Breadcrumbs' %}">
+    <div class="perch-shell">
+      <div class="perch-breadcrumbs">
+        <a href="{% url 'admin:index' %}">{% translate 'Dashboard' %}</a>
+        <span>&rsaquo;</span>
+        {% for app in app_list %}
+          <span>{{ app.name }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </nav>
+{% endblock %}
+{% endif %}
+
+{% block content_title %}
+<header class="perch-dashboard-header">
+  <h1 class="perch-dashboard-title">{{ title }}</h1>
+</header>
+{% endblock %}
+
+{% block content %}
+<div id="content-main" class="app-list perch-app-list-page">
+  {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+</div>
+{% endblock %}

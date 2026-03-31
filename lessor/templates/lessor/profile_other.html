@@ -17,6 +17,11 @@
           </div>
           {% endif %}
           <h1 class="h5 fw-bold mb-3">{{ p.full_name }}</h1>
+          <div class="d-flex justify-content-center mb-3">
+            <a class="btn btn-sm btn-outline-danger rounded-pill" href="{% url 'moderation:report_object' 'lessor' 'lessorprofile' p.pk %}?next={{ request.path }}">
+              <i class="bi bi-flag me-1"></i>Report profile
+            </a>
+          </div>
           {% if top_contacts %}
           <ul class="list-unstyled text-start small mb-0 mx-auto" style="max-width: 280px;">
             {% for c in top_contacts %}

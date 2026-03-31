@@ -1,0 +1,49 @@
+{% load i18n %}
+
+{% if app_list %}
+<div class="perch-app-grid">
+  {% for app in app_list %}
+  <section class="perch-app-card">
+    <div class="perch-app-card-head">
+      <div>
+        <p class="perch-kicker">{{ app.app_label }}</p>
+        <h3>
+          {% if app.app_url %}
+          <a href="{{ app.app_url }}">{{ app.name }}</a>
+          {% else %}
+          {{ app.name }}
+          {% endif %}
+        </h3>
+      </div>
+    </div>
+    <ul class="perch-model-list">
+      {% for model in app.models %}
+      <li class="perch-model-row">
+        <div class="perch-model-copy">
+          {% if model.admin_url %}
+          <a href="{{ model.admin_url }}">{{ model.name }}</a>
+          {% else %}
+          <span>{{ model.name }}</span>
+          {% endif %}
+        </div>
+        <div class="perch-model-actions">
+          {% if model.add_url %}
+          <a class="perch-chip perch-chip--ghost" href="{{ model.add_url }}">{% translate 'Add' %}</a>
+          {% endif %}
+          {% if model.admin_url and show_changelinks %}
+            {% if model.view_only %}
+            <a class="perch-chip" href="{{ model.admin_url }}">{% translate 'View' %}</a>
+            {% else %}
+            <a class="perch-chip" href="{{ model.admin_url }}">{% translate 'Manage' %}</a>
+            {% endif %}
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+</div>
+{% else %}
+<p class="perch-muted">{% translate 'You do not have permission to view or edit anything.' %}</p>
+{% endif %}

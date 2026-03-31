@@ -35,6 +35,11 @@
                 {% else %}
                   <span class="badge text-bg-secondary">Unverified</span>
                 {% endif %}
+                {% if listing.moderation_status == 'pending' %}
+                  <span class="badge text-bg-warning">Pending approval</span>
+                {% elif listing.moderation_status == 'rejected' %}
+                  <span class="badge text-bg-danger">Rejected</span>
+                {% endif %}
               </p>
               <div class="mb-3 d-flex align-items-center gap-2">
                 <span class="small text-muted">Review:</span>

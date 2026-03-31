@@ -1,0 +1,68 @@
+{% extends "admin/base_site.html" %}
+{% load i18n log %}
+
+{% block title %}Perch Admin{% endblock %}
+{% block bodyclass %}dashboard{% endblock %}
+
+{% block content_title %}
+<header class="perch-dashboard-header">
+  <h1 class="perch-dashboard-title">Overview</h1>
+</header>
+{% endblock %}
+
+{% block content %}
+<section class="perch-admin-grid">
+  {% for stat in dashboard_stats %}
+  <a class="perch-stat-card" href="{{ stat.link }}">
+    <span class="perch-stat-label">{{ stat.label }}</span>
+    <strong class="perch-stat-value">{{ stat.value }}</strong>
+  </a>
+  {% endfor %}
+</section>
+
+<section class="perch-dashboard-workspace">
+  <div class="perch-admin-panel perch-admin-panel--main">
+    <div class="perch-panel-head">
+      <div>
+        <p class="perch-kicker">Directory</p>
+        <h2>All models</h2>
+      </div>
+    </div>
+    {% include "admin/dashboard_quick_access.html" %}
+  </div>
+
+  <aside class="perch-admin-panel perch-admin-panel--aside">
+    <div class="perch-panel-head">
+      <div>
+        <p class="perch-kicker">Activity</p>
+        <h2>Recent actions</h2>
+      </div>
+    </div>
+    {% get_admin_log 8 as admin_log for_user user %}
+    {% if not admin_log %}
+    <p class="perch-muted">{% translate 'No recent actions yet.' %}</p>
+    {% else %}
+    <ul class="perch-action-list">
+      {% for entry in admin_log %}
+      <li>
+        <strong>
+          {% if entry.is_deletion or not entry.get_admin_url %}
+            {{ entry.object_repr }}
+          {% else %}
+            <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+          {% endif %}
+        </strong>
+        <span>
+          {% if entry.content_type %}
+            {{ entry.content_type.name|capfirst }}
+          {% else %}
+            {% translate 'Unknown content' %}
+          {% endif %}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </aside>
+</section>
+{% endblock %}

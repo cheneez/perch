@@ -12,6 +12,11 @@
         {% else %}
           <span class="badge text-bg-secondary">Unverified</span>
         {% endif %}
+        {% if listing.moderation_status == 'pending' %}
+          <span class="badge text-bg-warning">Pending approval</span>
+        {% elif listing.moderation_status == 'rejected' %}
+          <span class="badge text-bg-danger">Rejected</span>
+        {% endif %}
       </p>
     </div>
     <div class="d-flex gap-2">
@@ -53,6 +58,7 @@
           <p class="mb-1"><strong>${{ listing.price_monthly }}</strong> / month</p>
           <p class="mb-1">{{ listing.bedrooms }} bed, {{ listing.bathrooms }} bath</p>
           <p class="mb-1">Status: {{ listing.get_status_display }}</p>
+          <p class="mb-1">Approval: {{ listing.get_moderation_status_display }}</p>
           <p class="mb-1">Type: {{ listing.get_room_type_display }}</p>
           <p class="mb-0">Lease: {{ listing.get_lease_type_display }}</p>
 

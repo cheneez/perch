@@ -2,6 +2,19 @@ from django.conf import settings
 from django.db import models
 
 
+class ListingQuerySet(models.QuerySet):
+    def publicly_visible(self):
+        return self.filter(moderation_status='approved')
+
+    def accessible_to(self, user):
+        visible = self.publicly_visible()
+        if user and user.is_authenticated:
+            return self.filter(
+                models.Q(moderation_status='approved') | models.Q(owner=user)
+            ).distinct()
+        return visible
+
+
 class Listing(models.Model):
     class RoomType(models.TextChoices):
         ROOM = "room", "Room"
@@ -14,11 +27,17 @@ class Listing(models.Model):
         AVAILABLE = "available", "Available"
         PENDING = "pending", "Pending"
         RENTED = "rented", "Rented"
+    class ModerationStatus(models.TextChoices):
+        PENDING = "pending", "Pending Approval"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="listings",
     )
+    objects = ListingQuerySet.as_manager()
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     address = models.CharField(max_length=255)
@@ -66,12 +85,31 @@ class Listing(models.Model):
         choices=Status.choices,
         default=Status.AVAILABLE,
     )
+    moderation_status = models.CharField(
+        max_length=20,
+        choices=ModerationStatus.choices,
+        default=ModerationStatus.PENDING,
+    )
+    moderated_at = models.DateTimeField(null=True, blank=True)
+    moderated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='moderated_listings',
+    )
+    moderation_notes = models.TextField(blank=True)
     verified = models.BooleanField(default=False)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        self.verified = self.moderation_status == self.ModerationStatus.APPROVED
+        super().save(*args, **kwargs)
 
 
 class ListingImage(models.Model):
