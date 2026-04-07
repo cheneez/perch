@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.views.generic import TemplateView, View
 from django.shortcuts import render
 
@@ -16,10 +17,11 @@ from accounts.models import Profile
 
 from .forms import (
     StudentCreateProfileForm,
+    StudentCompatibilitySurveyForm,
     StudentEditDetailsForm,
     StudentEditProfileForm,
 )
-from .models import HOBBY_TAG_OPTIONS, StudentProfile
+from .models import HOBBY_TAG_OPTIONS, StudentCompatibilitySurvey, StudentProfile
 
 
 class StudentProfileRequiredMixin:
@@ -300,4 +302,75 @@ class StudentEditDetailsView(StudentProfileRequiredMixin, RoleRequiredMixin, For
     def form_valid(self, form):
         form.save()
         messages.success(self.request, 'Your details have been updated.')
+        return redirect('student:profile')
+
+
+class CompatibilitySurveyRedirectView(StudentProfileRequiredMixin, RoleRequiredMixin, View):
+    required_role = 'student'
+
+    def get(self, request, *args, **kwargs):
+        url = getattr(settings, 'COMPATIBILITY_SURVEY_URL', '').strip()
+        if not url:
+            messages.error(request, 'Compatibility survey is not configured yet.')
+            return redirect('student:profile')
+        return redirect(url)
+
+
+class CompatibilitySurveyInfoView(StudentProfileRequiredMixin, RoleRequiredMixin, TemplateView):
+    required_role = 'student'
+    template_name = 'student/compatibility_survey.html'
+
+
+class CompatibilitySurveyView(StudentProfileRequiredMixin, RoleRequiredMixin, FormView):
+    required_role = 'student'
+    template_name = 'student/compatibility_survey.html'
+    form_class = StudentCompatibilitySurveyForm
+
+    def get_form_kwargs(self):
+        kw = super().get_form_kwargs()
+        instance = StudentCompatibilitySurvey.objects.filter(user=self.request.user).first()
+        if instance:
+            kw['instance'] = instance
+        return kw
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['user'] = self.request.user
+        return ctx
+
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        obj.user = self.request.user
+        obj.save()
+
+        # Compute and persist 5 category scores (1–5) on the StudentProfile.
+        p = get_object_or_404(StudentProfile, user=self.request.user)
+        s = StudentCompatibilitySurvey.score_from_choice
+
+        personality_vals = [s(obj.personality), s(obj.guests), s(obj.noise_level)]
+        living_vals = [s(obj.smoking_habits), s(obj.party_at_home), s(obj.study_at_home)]
+        roommate_vals = [s(obj.roommate_relationship), s(obj.conflict_style)]
+        clean_vals = [s(obj.cleanliness)]
+        sleep_vals = [s(obj.sleep_schedule), s(obj.morning_night_preference)]
+
+        def avg(vals):
+            nums = [v for v in vals if v is not None]
+            return (sum(nums) / len(nums)) if nums else None
+
+        p.personality_score = avg(personality_vals)
+        p.living_habits_score = avg(living_vals)
+        p.roommate_preference_score = avg(roommate_vals)
+        p.cleanliness_score = avg(clean_vals)
+        p.sleep_score = avg(sleep_vals)
+        p.save(
+            update_fields=[
+                'personality_score',
+                'living_habits_score',
+                'roommate_preference_score',
+                'cleanliness_score',
+                'sleep_score',
+            ]
+        )
+
+        messages.success(self.request, 'Your compatibility survey was saved.')
         return redirect('student:profile')

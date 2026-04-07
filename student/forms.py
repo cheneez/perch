@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 from accounts.utils_profile import process_profile_image_upload
 
-from .models import HOBBY_TAG_OPTIONS, StudentProfile
+from .models import HOBBY_TAG_OPTIONS, StudentCompatibilitySurvey, StudentProfile
 
 
 class StudentCreateProfileForm(forms.ModelForm):
@@ -249,3 +249,25 @@ class StudentEditProfileForm(forms.ModelForm):
         if commit:
             profile.save()
         return profile
+
+
+class StudentCompatibilitySurveyForm(forms.ModelForm):
+    class Meta:
+        model = StudentCompatibilitySurvey
+        fields = [
+            'graduation_year',
+            'major',
+            'pets',
+            'smoking_habits',
+            'party_at_home',
+            'sleep_schedule',
+            'roommate_relationship',
+            'morning_night_preference',
+            'personality',
+            'cleanliness',
+            'guests',
+            'noise_level',
+            'study_at_home',
+            'conflict_style',
+        ]
+        widgets = {field: forms.RadioSelect() for field in fields}

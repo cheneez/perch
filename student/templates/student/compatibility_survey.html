@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Compatibility Survey — Perch{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4" style="max-width: 920px;">
+  <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+    <div>
+      <h1 class="h4 fw-bold mb-1">Compatibility Survey</h1>
+      <p class="text-muted mb-0">Answer these to help match you with compatible roommates.</p>
+    </div>
+    <a href="{% url 'student:profile' %}" class="btn btn-outline-secondary">Back to profile</a>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-info">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="POST" class="card border-0 shadow-sm">
+    {% csrf_token %}
+    <div class="card-body p-4">
+      {% for field in form %}
+        <div class="mb-4">
+          <div class="fw-bold mb-2">{{ field.label }}</div>
+          <div class="small text-danger mb-2">{{ field.errors }}</div>
+          <div class="d-grid gap-2">
+            {{ field }}
+          </div>
+        </div>
+      {% endfor %}
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Save survey</button>
+        <a href="{% url 'student:profile' %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
