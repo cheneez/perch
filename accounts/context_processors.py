@@ -1,4 +1,4 @@
-from accounts.models import Profile
+from accounts.models import get_or_create_account_profile
 from lessor.models import LessorProfile
 from student.models import StudentProfile
 
@@ -6,11 +6,10 @@ from student.models import StudentProfile
 def user_profile_context(request):
     if not request.user.is_authenticated:
         return {'user_profile': None, 'account_user_type': None}
-    profile, _ = Profile.objects.get_or_create(
-        user=request.user,
-        defaults={'user_type': 'student'},
-    )
+    profile, _ = get_or_create_account_profile(request.user)
     ut = profile.user_type
+    if ut == 'admin' or request.user.is_staff:
+        return {'user_profile': None, 'account_user_type': 'admin'}
     if ut == 'student':
         try:
             return {

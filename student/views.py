@@ -7,13 +7,14 @@ from django.shortcuts import render
 
 from listings.models import Listing
 from django.contrib import messages
-from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import FormView, TemplateView
 
 from accounts.mixins import RoleRequiredMixin
-from accounts.models import Profile
+from accounts.models import Favorite, Profile
+from accounts.public_profile import resolve_public_profile, toggle_public_profile_favorite
 
 from .forms import (
     StudentCreateProfileForm,
@@ -30,6 +31,10 @@ class StudentProfileRequiredMixin:
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return super().dispatch(request, *args, **kwargs)
+        if request.user.is_staff or request.user.is_superuser:
+            return redirect(reverse('admin:index'))
+        if Profile.objects.filter(user=request.user, user_type='admin').exists():
+            return redirect(reverse('admin:index'))
         if not StudentProfile.objects.filter(user=request.user).exists():
             return redirect('student:create_profile')
         return super().dispatch(request, *args, **kwargs)
@@ -175,7 +180,7 @@ class StudentProfileSelfView(StudentProfileRequiredMixin, RoleRequiredMixin, Tem
 
 class StudentProfileOtherView(StudentProfileRequiredMixin, RoleRequiredMixin, TemplateView):
     required_role = 'student'
-    template_name = 'student/profile_other.html'
+    template_name = 'student/public_profile.html'
 
     def dispatch(self, request, *args, **kwargs):
         if int(kwargs['user_id']) == request.user.id:
@@ -184,75 +189,32 @@ class StudentProfileOtherView(StudentProfileRequiredMixin, RoleRequiredMixin, Te
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        uid = self.kwargs['user_id']
-        target = get_object_or_404(StudentProfile.objects.select_related('user'), user_id=uid)
-        acc = Profile.objects.filter(user_id=uid).first()
-        if not acc or acc.user_type != 'student':
-            raise Http404()
+        uid = int(self.kwargs['user_id'])
+        data = resolve_public_profile(uid)
         ctx['user'] = self.request.user
-        ctx['p'] = target
-        ctx['top_contacts'] = self._top_contacts_public(target)
-        ctx['hobby_labels'] = hobby_label_map()
-        ctx['sections'] = self._section_flags(target)
+        ctx['profile_user'] = data.profile_user
+        ctx['p'] = data.p
+        ctx['profile_role'] = data.profile_role
+        ctx['top_contacts'] = data.top_contacts
+        ctx['hobby_labels'] = data.hobby_labels
+        ctx['sections'] = data.sections
+        ctx['is_favorited'] = Favorite.objects.filter(
+            user=self.request.user,
+            favorited_user_id=uid,
+        ).exists()
+        ctx['favorite_toggle_url'] = reverse(
+            'student:public_profile_favorite',
+            kwargs={'user_id': uid},
+        )
         return ctx
 
-    def _top_contacts_public(self, profile):
-        checks = [
-            (profile.show_email, profile.email, 'bi-envelope', 'Email'),
-            (profile.show_phone, profile.phone_number, 'bi-telephone', 'Phone'),
-            (profile.show_instagram, profile.instagram, 'bi-instagram', 'Instagram'),
-            (profile.show_linkedin, profile.linkedin, 'bi-linkedin', 'LinkedIn'),
-            (profile.show_handshake, profile.handshake, 'bi-mortarboard', 'Handshake'),
-            (profile.show_facebook, profile.facebook, 'bi-facebook', 'Facebook'),
-        ]
-        out = []
-        for visible, val, icon, label in checks:
-            if visible and val:
-                out.append({'value': val, 'icon': icon, 'label': label})
-            if len(out) >= 3:
-                break
-        return out
 
-    def _section_flags(self, p):
-        about = any(
-            [
-                p.display_name,
-                p.bio,
-                p.fun_fact_1,
-                p.fun_fact_2,
-                p.fun_fact_3,
-            ]
-        )
-        lifestyle = bool((p.hobbies or [])) or p.weekend_activities or p.roommate_environment
-        work = any(
-            [
-                p.employment_status,
-                p.current_role,
-                p.housing_budget,
-                p.can_contribute_rent is not None,
-            ]
-        )
-        social_any = False
-        social_rows = []
-        checks = [
-            (p.show_email, p.email, 'bi-envelope', 'Email'),
-            (p.show_phone, p.phone_number, 'bi-telephone', 'Phone'),
-            (p.show_instagram, p.instagram, 'bi-instagram', 'Instagram'),
-            (p.show_linkedin, p.linkedin, 'bi-linkedin', 'LinkedIn'),
-            (p.show_handshake, p.handshake, 'bi-mortarboard', 'Handshake'),
-            (p.show_facebook, p.facebook, 'bi-facebook', 'Facebook'),
-        ]
-        for vis, val, icon, label in checks:
-            if vis and val:
-                social_rows.append({'value': val, 'icon': icon, 'label': label})
-                social_any = True
-        return {
-            'about': about,
-            'lifestyle': lifestyle,
-            'work': work,
-            'social': social_any,
-            'social_rows': social_rows,
-        }
+class StudentPublicProfileFavoriteToggleView(StudentProfileRequiredMixin, RoleRequiredMixin, View):
+    required_role = 'student'
+    http_method_names = ['post', 'head', 'options']
+
+    def post(self, request, *args, **kwargs):
+        return toggle_public_profile_favorite(request, int(kwargs['user_id']))
 
 
 class StudentEditProfileView(StudentProfileRequiredMixin, RoleRequiredMixin, FormView):

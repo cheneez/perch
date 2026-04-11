@@ -16,7 +16,7 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.urls import reverse
 
-from .models import Profile
+from .models import Profile, get_or_create_account_profile
 from lessor.models import LessorProfile
 from student.models import StudentProfile
 
@@ -31,10 +31,7 @@ def is_bc_email(email):
 
 
 def get_profile(user, default_role='student'):
-    profile, _ = Profile.objects.get_or_create(
-        user=user,
-        defaults={'user_type': default_role},
-    )
+    profile, _ = get_or_create_account_profile(user, default_role_when_not_staff=default_role)
     return profile
 
 
@@ -157,6 +154,8 @@ def send_verification_email(request, user, profile):
 
 
 def ensure_verified_or_redirect(request, profile):
+    if profile.user_type == 'admin' or request.user.is_staff or request.user.is_superuser:
+        return None
     if profile.email_verified:
         return None
     return redirect('verify')
@@ -176,6 +175,8 @@ def login_view(request):
                     return render(request, 'accounts/login.html', {'google_oauth_enabled': oauth_is_configured()})
 
                 login(request, user)
+                if profile.user_type == 'admin' or user.is_staff or user.is_superuser:
+                    return redirect('dashboard')
                 if not profile.email_verified:
                     return redirect('verify')
                 return redirect('dashboard')
@@ -203,7 +204,8 @@ def signup_view(request):
         confirm_password = request.POST['confirm_password']
         user_type = request.POST.get('user_type', 'student')
 
-        if user_type not in dict(Profile.USER_TYPES):
+        allowed_signup_types = frozenset(('student', 'realtor'))
+        if user_type not in allowed_signup_types:
             messages.error(request, 'Please choose a valid account type.')
             return render(request, 'accounts/signup.html', {'google_oauth_enabled': oauth_is_configured()})
 
@@ -375,6 +377,8 @@ def google_callback_view(request):
         profile.save(update_fields=['email_verified', 'email_verification_token'])
 
     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    if profile.user_type == 'admin' or user.is_staff or user.is_superuser:
+        return redirect('dashboard')
     if not profile.email_verified:
         send_verification_email(request, user, profile)
         return redirect('verify')
@@ -391,6 +395,8 @@ def verify_view(request):
         return redirect('login')
 
     profile = get_profile(request.user)
+    if profile.user_type == 'admin' or request.user.is_staff:
+        return redirect('dashboard')
     if profile.email_verified:
         return redirect('dashboard')
 
@@ -409,6 +415,8 @@ def resend_verification_view(request):
         return redirect('login')
 
     profile = get_profile(request.user)
+    if profile.user_type == 'admin' or request.user.is_staff:
+        return redirect('dashboard')
     if profile.email_verified:
         return redirect('dashboard')
 
@@ -438,6 +446,8 @@ def dashboard_view(request):
     if not request.user.is_authenticated:
         return redirect('login')
     profile = get_profile(request.user)
+    if profile.user_type == 'admin' or request.user.is_staff or request.user.is_superuser:
+        return redirect(reverse('admin:index'))
     redirect_response = ensure_verified_or_redirect(request, profile)
     if redirect_response is not None:
         return redirect_response
