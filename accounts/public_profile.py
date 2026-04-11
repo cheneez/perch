@@ -8,7 +8,7 @@ from typing import Any
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.http import Http404, HttpRequest, HttpResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.urls import reverse
 
 from accounts.models import Favorite, Profile
@@ -67,17 +67,20 @@ def get_public_profile_url_for_user(user_or_id: int | User) -> str | None:
     return None
 
 
-def resolve_public_profile(user_id: int) -> PublicProfileData:
+def try_resolve_public_profile(user_id: int) -> PublicProfileData | None:
+    """Return public profile data, or None if user is missing, admin/staff, or has no browsable profile."""
     acc = Profile.objects.filter(user_id=user_id).select_related('user').first()
     if not acc:
-        raise Http404()
+        return None
 
     user = acc.user
     if acc.user_type == 'admin' or user.is_staff or user.is_superuser:
-        raise Http404()
+        return None
 
     if acc.user_type == 'student':
-        p = get_object_or_404(StudentProfile.objects.select_related('user'), user_id=user_id)
+        p = StudentProfile.objects.select_related('user').filter(user_id=user_id).first()
+        if not p:
+            return None
         top = _top_contacts_public_student(p)
         sections = _section_flags_student(p)
         return PublicProfileData(
@@ -90,7 +93,9 @@ def resolve_public_profile(user_id: int) -> PublicProfileData:
         )
 
     if acc.user_type in ('realtor', 'lessor'):
-        p = get_object_or_404(LessorProfile.objects.select_related('user'), user_id=user_id)
+        p = LessorProfile.objects.select_related('user').filter(user_id=user_id).first()
+        if not p:
+            return None
         top = _top_contacts_public_lessor(p)
         sections = _section_flags_lessor(p)
         return PublicProfileData(
@@ -102,7 +107,14 @@ def resolve_public_profile(user_id: int) -> PublicProfileData:
             hobby_labels={},
         )
 
-    raise Http404()
+    return None
+
+
+def resolve_public_profile(user_id: int) -> PublicProfileData:
+    data = try_resolve_public_profile(user_id)
+    if data is None:
+        raise Http404()
+    return data
 
 
 def _top_contacts_public_student(profile: StudentProfile):
@@ -229,7 +241,8 @@ def toggle_public_profile_favorite(request: HttpRequest, user_id: int) -> HttpRe
         messages.error(request, 'You cannot add yourself to favorites.')
         return redirect(reverse(self_profile_name))
 
-    resolve_public_profile(user_id)
+    if try_resolve_public_profile(user_id) is None:
+        return redirect(reverse(self_profile_name))
 
     existing = Favorite.objects.filter(user=request.user, favorited_user_id=user_id).first()
     if existing:

@@ -14,7 +14,10 @@ from django.views.generic import FormView, TemplateView
 
 from accounts.mixins import RoleRequiredMixin
 from accounts.models import Favorite, Profile
-from accounts.public_profile import resolve_public_profile, toggle_public_profile_favorite
+from accounts.public_profile import (
+    toggle_public_profile_favorite,
+    try_resolve_public_profile,
+)
 
 from .forms import (
     StudentCreateProfileForm,
@@ -187,10 +190,18 @@ class StudentProfileOtherView(StudentProfileRequiredMixin, RoleRequiredMixin, Te
             return redirect('student:profile')
         return super().dispatch(request, *args, **kwargs)
 
+    def get(self, request, *args, **kwargs):
+        uid = int(kwargs['user_id'])
+        data = try_resolve_public_profile(uid)
+        if data is None:
+            return redirect('student:profile')
+        self._public_profile_data = data
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         uid = int(self.kwargs['user_id'])
-        data = resolve_public_profile(uid)
+        data = self._public_profile_data
         ctx['user'] = self.request.user
         ctx['profile_user'] = data.profile_user
         ctx['p'] = data.p

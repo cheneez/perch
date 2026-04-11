@@ -10,7 +10,11 @@ from django.urls import reverse
 from lessor.models import LessorProfile
 
 from .models import Profile, get_or_create_account_profile
-from .public_profile import get_public_profile_url_for_user, resolve_public_profile
+from .public_profile import (
+    get_public_profile_url_for_user,
+    resolve_public_profile,
+    try_resolve_public_profile,
+)
 
 
 @override_settings(
@@ -221,7 +225,7 @@ class AdminAccountTypeTests(TestCase):
         self.assertTrue(created)
         self.assertEqual(profile.user_type, 'admin')
 
-    def test_resolve_public_profile_404_for_admin_account(self):
+    def test_try_resolve_public_profile_none_for_admin_account(self):
         admin_user = User.objects.create_user(
             username='siteadmin',
             email='siteadmin@example.com',
@@ -229,6 +233,7 @@ class AdminAccountTypeTests(TestCase):
             is_staff=True,
         )
         Profile.objects.create(user=admin_user, user_type='admin', email_verified=True)
+        self.assertIsNone(try_resolve_public_profile(admin_user.pk))
         with self.assertRaises(Http404):
             resolve_public_profile(admin_user.pk)
 
