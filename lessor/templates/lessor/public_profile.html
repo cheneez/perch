@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% firstof p.display_name p.full_name %} — Perch{% endblock %}
+
+{% block content %}
+<div class="profile-page container-fluid py-4">
+  {% include 'includes/public_profile_content.html' %}
+
+  <div class="row g-3 mt-1">
+    <div class="col-md-4">
+      <form method="post" action="{{ favorite_toggle_url }}" class="h-100">
+        {% csrf_token %}
+        <button type="submit" class="card profile-feature-card h-100 border rounded-3 p-4 text-center w-100 bg-white {% if is_favorited %}border-danger text-danger{% else %}text-dark{% endif %}">
+          {% if is_favorited %}
+          <i class="bi bi-heart-fill fs-2 d-block mb-2"></i>
+          <span class="fw-bold">Favorited</span>
+          {% else %}
+          <i class="bi bi-heart fs-2 d-block mb-2"></i>
+          <span class="fw-bold">Favorite</span>
+          {% endif %}
+        </button>
+      </form>
+    </div>
+    <div class="col-md-4">
+      <a href="#" class="text-decoration-none d-block h-100" data-user-id="{{ profile_user.id }}">
+        <div class="card profile-feature-card h-100 border rounded-3 p-4 text-center text-dark">
+          <i class="bi bi-envelope fs-2 d-block mb-2"></i>
+          <span class="fw-bold">Message</span>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-4">
+      <button type="button" class="card profile-feature-card h-100 border rounded-3 p-4 text-center text-muted w-100 bg-light" disabled title="Coming soon">
+        <i class="bi bi-flag fs-2 d-block mb-2"></i>
+        <span class="fw-bold">Report</span>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}

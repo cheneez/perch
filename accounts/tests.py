@@ -2,13 +2,19 @@ import uuid
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.core import mail
+from django.http import Http404
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from django.core import mail
 
 from lessor.models import LessorProfile
 
-from .models import Profile
+from .models import Profile, get_or_create_account_profile
+from .public_profile import (
+    get_public_profile_url_for_user,
+    resolve_public_profile,
+    try_resolve_public_profile,
+)
 
 
 @override_settings(
@@ -205,3 +211,79 @@ class AuthFlowTests(TestCase):
 
         self.assertContains(response, 'Only @bc.edu Google accounts can sign in as students.')
         self.assertFalse(User.objects.filter(email='student@gmail.com').exists())
+
+
+class AdminAccountTypeTests(TestCase):
+    def test_get_or_create_account_profile_defaults_staff_to_admin(self):
+        user = User.objects.create_user(
+            username='staffer',
+            email='staffer@example.com',
+            password='securepass123',
+            is_staff=True,
+        )
+        profile, created = get_or_create_account_profile(user)
+        self.assertTrue(created)
+        self.assertEqual(profile.user_type, 'admin')
+
+    def test_try_resolve_public_profile_none_for_admin_account(self):
+        admin_user = User.objects.create_user(
+            username='siteadmin',
+            email='siteadmin@example.com',
+            password='securepass123',
+            is_staff=True,
+        )
+        Profile.objects.create(user=admin_user, user_type='admin', email_verified=True)
+        self.assertIsNone(try_resolve_public_profile(admin_user.pk))
+        with self.assertRaises(Http404):
+            resolve_public_profile(admin_user.pk)
+
+    def test_get_public_profile_url_for_admin_is_none(self):
+        admin_user = User.objects.create_user(
+            username='mod2',
+            email='mod2@example.com',
+            password='securepass123',
+            is_staff=True,
+        )
+        Profile.objects.create(user=admin_user, user_type='admin', email_verified=True)
+        self.assertIsNone(get_public_profile_url_for_user(admin_user))
+        self.assertIsNone(get_public_profile_url_for_user(admin_user.pk))
+
+    def test_signup_rejects_admin_user_type(self):
+        response = self.client.post(
+            reverse('signup'),
+            {
+                'first_name': 'Bad',
+                'last_name': 'Actor',
+                'email': 'bad@example.com',
+                'password': 'securepass123',
+                'confirm_password': 'securepass123',
+                'user_type': 'admin',
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Please choose a valid account type.')
+        self.assertFalse(User.objects.filter(email='bad@example.com').exists())
+
+    def test_student_dashboard_redirects_staff_to_admin_index(self):
+        staff = User.objects.create_user(
+            username='staffdash',
+            email='staffdash@example.com',
+            password='securepass123',
+            is_staff=True,
+        )
+        Profile.objects.create(user=staff, user_type='admin', email_verified=True)
+        self.client.force_login(staff)
+        response = self.client.get(reverse('student:dashboard'))
+        self.assertRedirects(response, reverse('admin:index'), fetch_redirect_response=False)
+
+    def test_dashboard_redirects_admin_to_admin_index(self):
+        staff = User.objects.create_user(
+            username='dashadmin',
+            email='dashadmin@example.com',
+            password='securepass123',
+            is_staff=True,
+        )
+        Profile.objects.create(user=staff, user_type='admin', email_verified=True)
+        self.client.force_login(staff)
+        response = self.client.get(reverse('dashboard'))
+        self.assertRedirects(response, reverse('admin:index'), fetch_redirect_response=False)

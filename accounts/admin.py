@@ -1,7 +1,17 @@
 from django.contrib import admin
 from django.utils import timezone
 
-from .models import Profile
+from .models import Favorite, Profile
+
+
+@admin.register(Favorite)
+class FavoriteAdmin(admin.ModelAdmin):
+    list_display = ('user', 'favorited_user', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = (
+        'user__username',
+        'favorited_user__username',
+    )
 
 
 @admin.register(Profile)

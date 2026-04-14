@@ -3,7 +3,9 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views import View
 
-from .models import Profile
+from django.urls import reverse
+
+from .models import get_or_create_account_profile
 
 
 class RoleRequiredMixin(LoginRequiredMixin):
@@ -14,10 +16,9 @@ class RoleRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        profile, _ = Profile.objects.get_or_create(
-            user=request.user,
-            defaults={'user_type': 'student'}
-        )
+        profile, _ = get_or_create_account_profile(request.user)
+        if profile.user_type == 'admin' or request.user.is_staff:
+            return redirect(reverse('admin:index'))
         if not profile.email_verified:
             return redirect('verify')
         user_type = profile.user_type
