@@ -2,7 +2,7 @@
 {% block title %}Find Housing — Perch{% endblock %}
 
 {% block extra_head %}
-<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&loading=async"></script>
 {% endblock %}
 
 {% block content %}
@@ -103,7 +103,7 @@
       {% endif %}
     </div>
 
-    {# Right: Leaflet map #}
+    {# Right: Google Maps panel #}
     <div class="fh-map-panel">
       <p class="fh-list-heading">Map View</p>
       <div id="fh-map"></div>
@@ -161,7 +161,10 @@
   });
 
   if (hasPins) {
-    map.fitBounds(bounds);
+    map.fitBounds(bounds, { padding: 40 });
+    google.maps.event.addListenerOnce(map, 'bounds_changed', function () {
+      if (map.getZoom() > 15) map.setZoom(15);
+    });
   }
 
   // Card click: pan to marker, open info window, then navigate
