@@ -4,12 +4,11 @@ from django.contrib import admin
 from django.urls import path, include
 
 from .views import landing_page
-from .search_views import user_profile, user_search
+from .search_views import user_search
 
 urlpatterns = [
     path("", landing_page, name="landing"),
     path("search/users/", user_search, name="user_search"),
-    path("search/users/<int:user_id>/", user_profile, name="user_search_profile"),
     path("admin/", admin.site.urls),
     path("auth/", include("accounts.urls")),
     path("student/", include("student.urls")),
