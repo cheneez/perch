@@ -16,12 +16,12 @@
   <nav class="navbar navbar-expand navbar-dark fixed-top top-navbar">
     <div class="container-fluid">
       <a class="navbar-brand brand-perch" href="#">Perch</a>
-      <div class="navbar-nav flex-grow-1 justify-content-center mx-3">
-        <div class="input-group navbar-search" style="max-width: 320px;">
+      <form class="navbar-nav flex-grow-1 justify-content-center mx-3" method="get" action="{% url 'user_search' %}" role="search">
+        <div class="input-group navbar-search" style="max-width: 420px;">
           <span class="input-group-text navbar-search-icon"><i class="bi bi-search"></i></span>
-          <input type="search" class="form-control navbar-search-input" placeholder="Search..." aria-label="Search">
+          <input type="search" name="q" value="{{ request.GET.q|default:'' }}" class="form-control navbar-search-input" placeholder="Search people by name…" aria-label="Search users" minlength="2" autocomplete="off">
         </div>
-      </div>
+      </form>
       <div class="navbar-nav align-items-center flex-row gap-2">
         <a class="nav-link text-white px-2" href="#" aria-label="Notifications">
           <i class="bi bi-bell fs-5"></i>

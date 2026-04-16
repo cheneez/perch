@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ p.full_name }} — Perch{% endblock %}
+
+{% block content %}
+<div class="profile-page container-fluid py-4">
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card profile-card border-0 shadow-sm">
+        <div class="card-body text-center py-4">
+          {% if p.profile_picture %}
+          <img src="{{ p.profile_picture.url }}" alt="" class="profile-avatar-lg rounded-circle mb-3">
+          {% else %}
+          <div class="profile-avatar-lg rounded-circle bg-secondary-subtle d-inline-flex align-items-center justify-content-center mb-3 fw-bold text-secondary fs-2">
+            {{ p.first_name|slice:":1" }}{{ p.last_name|slice:":1" }}
+          </div>
+          {% endif %}
+          <h1 class="h5 fw-bold mb-1">{{ p.full_name }}</h1>
+          <div class="text-muted small mb-3">@{{ p.username }} <span class="badge rounded-pill text-bg-success ms-1">L</span></div>
+          <div class="d-flex justify-content-center mb-3">
+            <a class="btn btn-sm btn-outline-danger rounded-pill" href="{% url 'moderation:report_object' 'lessor' 'lessorprofile' p.pk %}?next={{ request.path }}">
+              <i class="bi bi-flag me-1"></i>Report profile
+            </a>
+          </div>
+          {% if top_contacts %}
+          <ul class="list-unstyled text-start small mb-0 mx-auto" style="max-width: 280px;">
+            {% for c in top_contacts %}
+            <li class="mb-2 d-flex align-items-center gap-2">
+              <i class="bi {{ c.icon }}"></i>
+              <span class="text-break">{{ c.value }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card profile-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-3">About</h2>
+          {% if p.display_name %}<p class="fw-semibold mb-2">{{ p.display_name }}</p>{% endif %}
+          {% if p.bio %}<p class="mb-0">{{ p.bio|linebreaksbr }}</p>{% else %}<p class="text-muted mb-0">No bio provided.</p>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
