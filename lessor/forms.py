@@ -131,9 +131,6 @@ class LessorEditProfileForm(forms.ModelForm):
             'profile_picture',
             'display_name',
             'bio',
-            'fun_fact_1',
-            'fun_fact_2',
-            'fun_fact_3',
             'email',
             'phone_number',
             'instagram',
@@ -153,9 +150,6 @@ class LessorEditProfileForm(forms.ModelForm):
             ),
             'display_name': forms.TextInput(attrs={'class': 'form-control'}),
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'maxlength': 400}),
-            'fun_fact_1': forms.TextInput(attrs={'class': 'form-control'}),
-            'fun_fact_2': forms.TextInput(attrs={'class': 'form-control'}),
-            'fun_fact_3': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(
                 attrs={'class': 'form-control', 'placeholder': 'name@example.com'}
             ),

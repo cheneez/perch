@@ -91,13 +91,8 @@ class StudentProfile(models.Model):
 
     display_name = models.CharField(max_length=100, blank=True)
     bio = models.TextField(max_length=400, blank=True)
-    fun_fact_1 = models.CharField(max_length=200, blank=True)
-    fun_fact_2 = models.CharField(max_length=200, blank=True)
-    fun_fact_3 = models.CharField(max_length=200, blank=True)
 
     hobbies = models.JSONField(default=list, blank=True)
-    weekend_activities = models.TextField(max_length=300, blank=True)
-    roommate_environment = models.TextField(max_length=300, blank=True)
 
     employment_status = models.CharField(
         max_length=100,
@@ -125,13 +120,6 @@ class StudentProfile(models.Model):
     show_linkedin = models.BooleanField(default=True)
     show_handshake = models.BooleanField(default=False)
     show_facebook = models.BooleanField(default=False)
-
-    # Compatibility vector (1–5 scores). Computed from the survey.
-    personality_score = models.FloatField(null=True, blank=True)
-    living_habits_score = models.FloatField(null=True, blank=True)
-    roommate_preference_score = models.FloatField(null=True, blank=True)
-    cleanliness_score = models.FloatField(null=True, blank=True)
-    sleep_score = models.FloatField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -270,6 +258,26 @@ class StudentCompatibilitySurvey(models.Model):
 
     def __str__(self):
         return f'StudentCompatibilitySurvey(user_id={self.user_id})'
+
+    def is_completed(self):
+        """A survey is complete when all required response fields are present and scorable."""
+        required_choice_fields = (
+            'pets',
+            'smoking_habits',
+            'party_at_home',
+            'sleep_schedule',
+            'roommate_relationship',
+            'morning_night_preference',
+            'personality',
+            'cleanliness',
+            'guests',
+            'noise_level',
+            'study_at_home',
+            'conflict_style',
+        )
+        if not self.graduation_year or not self.major:
+            return False
+        return all(self.score_from_choice(getattr(self, field, None)) is not None for field in required_choice_fields)
 
     @staticmethod
     def score_from_choice(value):

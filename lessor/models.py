@@ -26,9 +26,6 @@ class LessorProfile(models.Model):
 
     display_name = models.CharField(max_length=100, blank=True)
     bio = models.TextField(max_length=400, blank=True)
-    fun_fact_1 = models.CharField(max_length=200, blank=True)
-    fun_fact_2 = models.CharField(max_length=200, blank=True)
-    fun_fact_3 = models.CharField(max_length=200, blank=True)
 
     email = models.EmailField(blank=True)
     phone_number = models.CharField(max_length=20, blank=True)
