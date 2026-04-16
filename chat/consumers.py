@@ -79,6 +79,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'message_id': event['message_id'],
         }))
 
+    async def participant_update(self, event):
+        """Handler for participant add/remove events."""
+        await self.send(text_data=json.dumps({
+            'type': 'participant_update',
+            'action': event['action'],       # 'added' | 'removed'
+            'user_id': event['user_id'],
+            'user_name': event['user_name'],
+            'participants': event['participants'],
+        }))
+
     # ── DB helpers ──────────────────────────────────────────────
 
     @database_sync_to_async
