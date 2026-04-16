@@ -15,6 +15,7 @@ urlpatterns = [
     path("lessor/", include("lessor.urls")),
     path("listings/", include("listings.urls")),
     path("reports/", include("moderation.urls")),
+    path("chat/", include("chat.urls")),
 ]
 
 if settings.DEBUG:

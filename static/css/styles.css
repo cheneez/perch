@@ -252,3 +252,5 @@ body {
     top: calc(var(--navbar-height) + 1rem);
   }
 }
+
+/* Chat / Messaging styles live in static/css/chat.css */
