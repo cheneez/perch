@@ -126,4 +126,31 @@ class ListingImage(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return f"Image for listing {self.listing_id}"
-# Create your models here.
+
+
+class ListingFavorite(models.Model):
+    """A student's saved listing."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="listing_favorites",
+    )
+    listing = models.ForeignKey(
+        Listing,
+        on_delete=models.CASCADE,
+        related_name="favorited_by",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("user", "listing"),
+                name="listings_listingfavorite_user_listing_uniq",
+            )
+        ]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user_id} -> listing {self.listing_id}"
