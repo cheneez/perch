@@ -49,17 +49,20 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'perch.admin.PerchAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'accounts',
     'student',
     'lessor',
     'listings',
     'moderation',
+    'chat',
 ]
 
 MIDDLEWARE = [
@@ -91,6 +94,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'perch.wsgi.application'
+ASGI_APPLICATION = 'perch.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 
 # Database
