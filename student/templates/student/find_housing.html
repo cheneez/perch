@@ -2,7 +2,7 @@
 {% block title %}Find Housing — Perch{% endblock %}
 
 {% block extra_head %}
-<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&loading=async"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&loading=async&callback=initFHMap"></script>
 {% endblock %}
 
 {% block content %}
@@ -115,7 +115,7 @@
 
 {% block extra_js %}
 <script>
-(function () {
+function initFHMap() {
   var pins = {{ map_pins|safe }};
   var radiusMiles = {{ radius }};
   var BC = { lat: 42.3355, lng: -71.1685 };
@@ -186,7 +186,7 @@
       }
     });
   });
-})();
+}
 </script>
 
 <style>
