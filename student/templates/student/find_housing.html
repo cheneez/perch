@@ -149,14 +149,29 @@ function initFHMap() {
     var marker = new google.maps.Marker({
       position: { lat: p.lat, lng: p.lng },
       map: map,
-      title: p.title,
+    });
+
+    var popupHtml =
+      '<div style="font-family:\'DM Sans\',sans-serif;padding:6px 10px 8px;min-width:150px;">' +
+        '<div style="font-weight:600;font-size:0.88rem;color:#1a1a2e;margin-bottom:3px;">' + p.title + '</div>' +
+        '<div style="font-size:0.82rem;font-weight:700;color:#0f1f4b;">$' + parseFloat(p.price).toLocaleString() + '<span style="font-weight:400;color:#888;">/mo</span></div>' +
+        '<div style="font-size:0.7rem;color:#aaa;margin-top:4px;letter-spacing:0.02em;">Click to view →</div>' +
+      '</div>';
+
+    marker.addListener('mouseover', function () {
+      infoWindow.setContent(popupHtml);
+      infoWindow.open(map, marker);
+    });
+
+    marker.addListener('mouseout', function () {
+      infoWindow.close();
     });
 
     marker.addListener('click', function () {
       window.location.href = p.url;
     });
 
-    markers[p.pk] = marker;
+    markers[String(p.pk)] = marker;
     bounds.extend(marker.getPosition());
   });
 
@@ -174,8 +189,12 @@ function initFHMap() {
       if (markers[pk]) {
         e.preventDefault();
         map.panTo(markers[pk].getPosition());
+        var pin = pins.find(function (p) { return String(p.pk) === pk; });
         infoWindow.setContent(
-          '<div class="fh-popup"><strong>' + markers[pk].getTitle() + '</strong></div>'
+          '<div style="font-family:\'DM Sans\',sans-serif;padding:6px 10px 8px;min-width:150px;">' +
+            '<div style="font-weight:600;font-size:0.88rem;color:#1a1a2e;margin-bottom:3px;">' + (pin ? pin.title : '') + '</div>' +
+            (pin ? '<div style="font-size:0.82rem;font-weight:700;color:#0f1f4b;">$' + parseFloat(pin.price).toLocaleString() + '<span style="font-weight:400;color:#888;">/mo</span></div>' : '') +
+          '</div>'
         );
         infoWindow.open(map, markers[pk]);
         document.querySelectorAll('.fh-card').forEach(function (c) {
