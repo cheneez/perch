@@ -1,7 +1,7 @@
 import json
 
 from django.conf import settings
-from django.views.generic import TemplateView, View
+from django.contrib.auth.models import User
 from django.shortcuts import render
 
 
@@ -25,7 +25,14 @@ from .forms import (
     StudentEditDetailsForm,
     StudentEditProfileForm,
 )
-from .models import HOBBY_TAG_OPTIONS, StudentCompatibilitySurvey, StudentProfile
+from .compatibility import compatibility_percent
+from .models import (
+    GRADUATION_YEAR_CHOICES,
+    MAJOR_CHOICES,
+    HOBBY_TAG_OPTIONS,
+    StudentCompatibilitySurvey,
+    StudentProfile,
+)
 
 
 class StudentProfileRequiredMixin:
@@ -41,6 +48,13 @@ class StudentProfileRequiredMixin:
         if not StudentProfile.objects.filter(user=request.user).exists():
             return redirect('student:create_profile')
         return super().dispatch(request, *args, **kwargs)
+
+    @staticmethod
+    def get_completed_survey(user):
+        survey = StudentCompatibilitySurvey.objects.filter(user=user).first()
+        if survey and survey.is_completed():
+            return survey
+        return None
 
 
 def hobby_label_map():
@@ -157,10 +171,12 @@ class StudentProfileSelfView(StudentProfileRequiredMixin, RoleRequiredMixin, Tem
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         profile = get_object_or_404(StudentProfile, user=self.request.user)
+        survey = self.get_completed_survey(self.request.user)
         ctx['user'] = self.request.user
         ctx['p'] = profile
         ctx['top_contacts'] = self._top_contacts_self(profile)
         ctx['hobby_labels'] = hobby_label_map()
+        ctx['has_completed_survey'] = bool(survey)
         return ctx
 
     def _top_contacts_self(self, profile):
@@ -316,34 +332,142 @@ class CompatibilitySurveyView(StudentProfileRequiredMixin, RoleRequiredMixin, Fo
         obj.user = self.request.user
         obj.save()
 
-        # Compute and persist 5 category scores (1–5) on the StudentProfile.
-        p = get_object_or_404(StudentProfile, user=self.request.user)
-        s = StudentCompatibilitySurvey.score_from_choice
-
-        personality_vals = [s(obj.personality), s(obj.guests), s(obj.noise_level)]
-        living_vals = [s(obj.smoking_habits), s(obj.party_at_home), s(obj.study_at_home)]
-        roommate_vals = [s(obj.roommate_relationship), s(obj.conflict_style)]
-        clean_vals = [s(obj.cleanliness)]
-        sleep_vals = [s(obj.sleep_schedule), s(obj.morning_night_preference)]
-
-        def avg(vals):
-            nums = [v for v in vals if v is not None]
-            return (sum(nums) / len(nums)) if nums else None
-
-        p.personality_score = avg(personality_vals)
-        p.living_habits_score = avg(living_vals)
-        p.roommate_preference_score = avg(roommate_vals)
-        p.cleanliness_score = avg(clean_vals)
-        p.sleep_score = avg(sleep_vals)
-        p.save(
-            update_fields=[
-                'personality_score',
-                'living_habits_score',
-                'roommate_preference_score',
-                'cleanliness_score',
-                'sleep_score',
-            ]
-        )
-
         messages.success(self.request, 'Your compatibility survey was saved.')
         return redirect('student:profile')
+
+
+class FindRoommatesView(StudentProfileRequiredMixin, RoleRequiredMixin, TemplateView):
+    required_role = 'student'
+    template_name = 'student/find_roommates.html'
+
+    FILTER_FIELDS = ('graduation_year', 'major', 'smoking_habits', 'cleanliness', 'noise_level', 'sleep_schedule')
+
+    def dispatch(self, request, *args, **kwargs):
+        self.viewer_survey = self.get_completed_survey(request.user)
+        if not self.viewer_survey:
+            messages.info(request, 'Complete your compatibility survey first to find roommates.')
+            return redirect('student:compatibility_survey')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        filters = {name: self.request.GET.get(name, '').strip() for name in self.FILTER_FIELDS}
+        candidates = self._eligible_candidates(filters)
+        has_filters = any(filters.values())
+        base_pool_count = self._base_candidate_count()
+
+        results = []
+        for candidate in candidates:
+            candidate_survey = candidate.compatibility_survey
+            score = compatibility_percent(self.viewer_survey, candidate_survey)
+            results.append(
+                {
+                    'user_id': candidate.id,
+                    'name': self._privacy_name(candidate),
+                    'avatar_url': (
+                        candidate.student_profile.profile_picture.url
+                        if candidate.student_profile and candidate.student_profile.profile_picture
+                        else ''
+                    ),
+                    'gender': candidate.student_profile.get_gender_identity_display()
+                    if candidate.student_profile and candidate.student_profile.gender_identity
+                    else '',
+                    'graduation_year': candidate_survey.get_graduation_year_display(),
+                    'major': candidate_survey.get_major_display(),
+                    'compatibility_score': score,
+                }
+            )
+        results.sort(key=lambda item: item['compatibility_score'], reverse=True)
+
+        ctx.update(
+            {
+                'user': self.request.user,
+                'results': results,
+                'filters': filters,
+                'graduation_year_choices': GRADUATION_YEAR_CHOICES,
+                'major_choices': MAJOR_CHOICES,
+                'empty_no_candidates': base_pool_count == 0,
+                'empty_no_matches': base_pool_count > 0 and len(results) == 0,
+                'has_filters': has_filters,
+            }
+        )
+        return ctx
+
+    def _eligible_candidates(self, filters):
+        qs = (
+            User.objects.select_related('student_profile', 'compatibility_survey')
+            .filter(
+                profile__user_type='student',
+                student_profile__isnull=False,
+                is_staff=False,
+                is_superuser=False,
+            )
+            .exclude(id=self.request.user.id)
+            .exclude(profile__user_type='admin')
+        )
+
+        # Keep only users who have a completed survey and then apply hard filters.
+        eligible = []
+        for user in qs:
+            survey = getattr(user, 'compatibility_survey', None)
+            if not survey or not survey.is_completed():
+                continue
+            if filters['graduation_year'] and survey.graduation_year != filters['graduation_year']:
+                continue
+            if filters['major'] and survey.major != filters['major']:
+                continue
+            if filters['smoking_habits'] and survey.smoking_habits != filters['smoking_habits']:
+                continue
+            if filters['cleanliness']:
+                clean_value = StudentCompatibilitySurvey.score_from_choice(survey.cleanliness)
+                min_clean = StudentCompatibilitySurvey.score_from_choice(filters['cleanliness'])
+                if clean_value is None or min_clean is None or clean_value < min_clean:
+                    continue
+            if filters['noise_level'] and survey.noise_level != filters['noise_level']:
+                continue
+            if filters['sleep_schedule']:
+                candidate_sleep = StudentCompatibilitySurvey.score_from_choice(survey.sleep_schedule)
+                viewer_sleep = StudentCompatibilitySurvey.score_from_choice(self.viewer_survey.sleep_schedule)
+                if candidate_sleep is None or viewer_sleep is None:
+                    continue
+                if abs(
+                    candidate_sleep - viewer_sleep
+                ) > 1:
+                    continue
+            eligible.append(user)
+        return eligible
+
+    def _base_candidate_count(self):
+        qs = (
+            User.objects.select_related('compatibility_survey')
+            .filter(
+                profile__user_type='student',
+                student_profile__isnull=False,
+                is_staff=False,
+                is_superuser=False,
+            )
+            .exclude(id=self.request.user.id)
+            .exclude(profile__user_type='admin')
+        )
+        return sum(
+            1
+            for user in qs
+            if getattr(user, 'compatibility_survey', None)
+            and user.compatibility_survey.is_completed()
+        )
+
+    @staticmethod
+    def _privacy_name(user):
+        """Prefer StudentProfile names (onboarding) over auth User names; then username."""
+        sp = getattr(user, 'student_profile', None)
+        if sp:
+            first_name = (sp.first_name or user.first_name or '').strip()
+            last_name = (sp.last_name or user.last_name or '').strip()
+        else:
+            first_name = (user.first_name or '').strip()
+            last_name = (user.last_name or '').strip()
+        if first_name and last_name:
+            return f'{first_name} {last_name[0]}.'
+        if first_name:
+            return first_name
+        return user.username

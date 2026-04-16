@@ -159,13 +159,10 @@ def _section_flags_student(p: StudentProfile):
         for x in (
             p.display_name,
             p.bio,
-            p.fun_fact_1,
-            p.fun_fact_2,
-            p.fun_fact_3,
         )
     )
     hobby_list = _hobbies_list(p)
-    lifestyle = bool(hobby_list) or _filled(p.weekend_activities) or _filled(p.roommate_environment)
+    lifestyle = bool(hobby_list)
     # Align with edit_profile live preview: work block only if employment/role/budget text
     # or explicit "can contribute" yes — not unknown/no alone.
     work = (
@@ -204,9 +201,6 @@ def _section_flags_lessor(p: LessorProfile):
         for x in (
             p.display_name,
             p.bio,
-            p.fun_fact_1,
-            p.fun_fact_2,
-            p.fun_fact_3,
         )
     )
     social_rows = []
