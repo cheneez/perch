@@ -150,6 +150,7 @@ GOOGLE_OAUTH_CALLBACK_URL = os.environ.get(
     'GOOGLE_OAUTH_CALLBACK_URL',
     'http://127.0.0.1:8000/auth/google/callback/',
 )
+GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '')
 
 EMAIL_BACKEND = os.environ.get(
     'EMAIL_BACKEND',
