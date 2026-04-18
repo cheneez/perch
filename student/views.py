@@ -2,15 +2,19 @@ import json
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
+from django.db.models import Max
 from django.shortcuts import render
 
 
-from listings.models import Listing
+from listings.models import Listing, ListingFavorite
+from chat.models import Conversation, Message
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import FormView, TemplateView
+from django.views.decorators.http import require_POST
 
 from accounts.mixins import RoleRequiredMixin
 from accounts.models import Favorite, Profile
@@ -68,13 +72,50 @@ class StudentDashboardView(StudentProfileRequiredMixin, RoleRequiredMixin, Templ
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['user'] = self.request.user
+        user = self.request.user
+        context['favorite_listings'] = (
+            Listing.objects.accessible_to(self.request.user)
+            .filter(favorited_by__user=user, status='available')
+            .prefetch_related('images')
+            .distinct()
+            .order_by('-favorited_by__created_at')[:12]
+        )
+        context['favorite_listing_ids'] = set(
+            ListingFavorite.objects.filter(user=user).values_list('listing_id', flat=True)
+        )
+        # Recent chat previews for dashboard Chat section.
+        conversations = (
+            Conversation.objects
+            .filter(participants=user)
+            .annotate(last_message_time=Max('messages__created_at'))
+            .order_by('-updated_at')[:5]
+        )
+        preview_items = []
+        for conv in conversations:
+            other = conv.participants.exclude(id=user.id).first()
+            last_msg = conv.messages.order_by('-created_at').first()
+            if not other or not last_msg:
+                continue
+            preview_items.append(
+                {
+                    "id": conv.id,
+                    "other_name": other.get_full_name() or other.username,
+                    "last_snippet": last_msg.content[:80],
+                    "timestamp": last_msg.created_at,
+                }
+            )
+        context["recent_conversations"] = preview_items
         return context
 
 
 class FindHousingView(View):
 
     def get(self, request):
-        qs = Listing.objects.filter(status='available').prefetch_related('images')
+        qs = (
+            Listing.objects.publicly_visible()
+            .filter(status='available')
+            .prefetch_related('images')
+        )
 
         min_price = request.GET.get('min_price', '').strip()
         max_price = request.GET.get('max_price', '').strip()
@@ -91,6 +132,9 @@ class FindHousingView(View):
             qs = qs.filter(room_type=room_type)
 
         qs = qs.order_by('-created_at')
+        favorite_listing_ids = set(
+            ListingFavorite.objects.filter(user=request.user).values_list('listing_id', flat=True)
+        )
 
         map_pins = json.dumps([
             {
@@ -107,7 +151,24 @@ class FindHousingView(View):
             'listings': qs,
             'map_pins': map_pins,
             'filters': request.GET,
+            'favorite_listing_ids': favorite_listing_ids,
         })
+
+
+@login_required
+@require_POST
+def toggle_listing_favorite(request, listing_id):
+    listing = get_object_or_404(
+        Listing.objects.publicly_visible().filter(status='available'),
+        pk=listing_id,
+    )
+    favorite, created = ListingFavorite.objects.get_or_create(
+        user=request.user,
+        listing=listing,
+    )
+    if not created:
+        favorite.delete()
+    return redirect(request.POST.get('next') or reverse('student:find_housing'))
 
 
 class StudentMessagesView(StudentProfileRequiredMixin, RoleRequiredMixin, TemplateView):

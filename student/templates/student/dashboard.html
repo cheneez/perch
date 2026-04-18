@@ -62,8 +62,55 @@
     <div class="card-header">
       <h5 class="mb-0">Housing Overview</h5>
     </div>
-    <div class="card-body placeholder-content">
-      <span>Content coming soon</span>
+    <div class="card-body">
+      {% if favorite_listings %}
+        <div class="dashboard-housing-grid">
+          {% for listing in favorite_listings %}
+            <div class="fh-card-shell" id="overview-fh-card-{{ listing.pk }}" data-pk="{{ listing.pk }}">
+              <form method="post" action="{% url 'student:toggle_listing_favorite' listing.pk %}" class="fh-favorite-form">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button type="submit" class="fh-favorite-btn" aria-label="Toggle favorite">
+                  {% if listing.pk in favorite_listing_ids %}
+                    <i class="bi bi-heart-fill"></i>
+                  {% else %}
+                    <i class="bi bi-heart"></i>
+                  {% endif %}
+                </button>
+              </form>
+              <a href="{% url 'listings:property' listing.pk %}" class="fh-card">
+                <div class="fh-card-img-wrap">
+                  {% with img=listing.images.first %}
+                    {% if img and img.image %}
+                      <img src="{{ img.image.url }}" class="fh-card-img" alt="{{ listing.title }}">
+                    {% elif img and img.image_url %}
+                      <img src="{{ img.image_url }}" class="fh-card-img" alt="{{ listing.title }}">
+                    {% else %}
+                      <div class="fh-card-img fh-card-img-placeholder"><i class="bi bi-image"></i></div>
+                    {% endif %}
+                  {% endwith %}
+                  <span class="fh-price-badge">${{ listing.price_monthly|floatformat:0 }}/mo</span>
+                </div>
+                <div class="fh-card-body">
+                  <p class="fh-card-title">{{ listing.title }}</p>
+                  <p class="fh-card-address">{{ listing.address }}</p>
+                  <div class="fh-card-meta">
+                    <span><i class="bi bi-door-open"></i> {{ listing.bedrooms }} bd</span>
+                    <span><i class="bi bi-droplet"></i> {{ listing.bathrooms }} ba</span>
+                    {% if listing.distance_miles %}
+                      <span><i class="bi bi-geo"></i> {{ listing.distance_miles }} mi</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="placeholder-content">
+          <span>No favorited listings yet.</span>
+        </div>
+      {% endif %}
     </div>
   </div>
 
@@ -83,11 +130,141 @@
         <div class="card-header">
           <h5 class="mb-0">Chat</h5>
         </div>
-        <div class="card-body placeholder-content-sm">
-          <span>In-house chat coming soon</span>
+        <div class="card-body">
+          {% if recent_conversations %}
+            <ul class="list-unstyled mb-0">
+              {% for conv in recent_conversations %}
+                <li class="mb-2">
+                  <a href="{% url 'student:messages' %}?conversation={{ conv.id }}"
+                     class="d-flex align-items-start text-decoration-none text-reset">
+                    <div class="me-2 rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                         style="width:32px;height:32px;font-size:0.8rem;">
+                      {{ conv.other_name|slice:":1"|upper }}
+                    </div>
+                    <div class="flex-grow-1">
+                      <div class="d-flex justify-content-between">
+                        <span class="fw-semibold small">{{ conv.other_name }}</span>
+                        <span class="text-muted small">
+                          {{ conv.timestamp|date:"M j" }}
+                        </span>
+                      </div>
+                      <p class="text-muted small mb-0">
+                        {{ conv.last_snippet }}
+                      </p>
+                    </div>
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="placeholder-content-sm">
+              <span>No recent messages yet.</span>
+            </div>
+          {% endif %}
         </div>
       </div>
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.dashboard-housing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+.fh-card-shell {
+  position: relative;
+}
+.fh-card {
+  display: block;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  transition: box-shadow 0.18s, transform 0.18s;
+  border: 2px solid transparent;
+}
+.fh-favorite-form {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+}
+.fh-favorite-btn {
+  border: 0;
+  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #dc3545;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.2);
+}
+.fh-card:hover {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.13);
+  transform: translateY(-1px);
+}
+.fh-card-img-wrap { position: relative; }
+.fh-card-img {
+  width: 100%;
+  height: 170px;
+  object-fit: cover;
+  display: block;
+}
+.fh-card-img-placeholder {
+  width: 100%;
+  height: 170px;
+  background: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #adb5bd;
+}
+.fh-price-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+}
+.fh-card-body { padding: 10px 12px 12px; }
+.fh-card-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0 0 2px;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fh-card-address {
+  font-size: 0.78rem;
+  color: #6c757d;
+  margin: 0 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fh-card-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 0.75rem;
+  color: #495057;
+}
+.fh-card-meta i { margin-right: 2px; }
+</style>
 {% endblock %}
