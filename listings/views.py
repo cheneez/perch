@@ -5,9 +5,11 @@ import urllib.request
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
+from chat.models import Conversation, Message
 from .forms import ListingForm
-from .models import Listing, ListingImage
+from .models import Listing, ListingFavorite, ListingImage
 
 
 def _geocode(address):
@@ -107,4 +109,50 @@ def delete_listing(request, pk):
 
 def property_detail(request, pk):
     listing = get_object_or_404(Listing.objects.accessible_to(request.user), pk=pk)
-    return render(request, 'listings/property.html', {'listing': listing})
+    is_favorited = False
+    if request.user.is_authenticated:
+        is_favorited = ListingFavorite.objects.filter(user=request.user, listing=listing).exists()
+    return render(
+        request,
+        'listings/property.html',
+        {
+            'listing': listing,
+            'is_favorited': is_favorited,
+        },
+    )
+
+
+@login_required
+@require_POST
+def contact_realtor(request, pk):
+    listing = get_object_or_404(Listing.objects.accessible_to(request.user), pk=pk)
+    body = request.POST.get("message", "").strip()
+
+    if not body:
+        messages.error(request, "Please enter a message before contacting the realtor.")
+        return redirect("listings:property", pk=listing.pk)
+
+    if request.user == listing.owner:
+        messages.error(request, "You cannot message yourself about your own listing.")
+        return redirect("listings:property", pk=listing.pk)
+
+    conversation = (
+        Conversation.objects
+        .filter(participants=request.user)
+        .filter(participants=listing.owner)
+        .first()
+    )
+    if conversation is None:
+        conversation = Conversation.objects.create()
+        conversation.participants.add(request.user, listing.owner)
+
+    Message.objects.create(
+        conversation=conversation,
+        sender=request.user,
+        content=body,
+    )
+    # Touch the conversation so inbox ordering shows latest activity.
+    conversation.save(update_fields=["updated_at"])
+
+    messages.success(request, "Message sent to the realtor.")
+    return redirect("student:find_housing")
