@@ -113,7 +113,7 @@ class FindHousingView(View):
     def get(self, request):
         qs = (
             Listing.objects.publicly_visible()
-            .filter(status='available')
+            .filter(status=Listing.Status.AVAILABLE)
             .prefetch_related('images')
         )
 
