@@ -174,7 +174,7 @@ def toggle_listing_favorite(request, listing_id):
 class StudentMessagesView(StudentProfileRequiredMixin, RoleRequiredMixin, TemplateView):
     """Real-time messaging page for students."""
     required_role = 'student'
-    template_name = 'student/messages.html'
+    template_name = 'chat/messages.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

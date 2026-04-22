@@ -38,6 +38,16 @@ class LessorDashboardView(LessorProfileRequiredMixin, RoleRequiredMixin, Templat
         return context
 
 
+class LessorMessagesView(LessorProfileRequiredMixin, RoleRequiredMixin, TemplateView):
+    required_role = 'lessor'
+    template_name = 'chat/messages.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['user'] = self.request.user
+        return context
+
+
 class LessorPlaceholderView(LessorProfileRequiredMixin, RoleRequiredMixin, TemplateView):
     required_role = 'lessor'
     template_name = 'lessor/placeholder_page.html'

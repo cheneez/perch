@@ -3,14 +3,18 @@ from django.db import models
 
 
 class Conversation(models.Model):
-    """
-    A conversation between two (or more, for future group chat) users.
-    Uses ManyToMany participants so extending to group chats requires
-    no schema migration — just UI and consumer logic changes.
-    """
     participants = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name='conversations',
+    )
+    name = models.CharField(max_length=100, blank=True, default='')
+    is_group = models.BooleanField(default=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='created_conversations',
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

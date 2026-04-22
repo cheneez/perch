@@ -1,0 +1,657 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Messages — Perch{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/chat.css' %}">
+<style>
+.conv-avatar.group-avatar { background: linear-gradient(135deg, #2d7d9a, #1a5276); font-size: 1rem; }
+.chat-header-avatar.group-avatar { background: linear-gradient(135deg, #2d7d9a, #1a5276); font-size: 1rem; }
+.chat-header-actions { margin-left: auto; display: flex; gap: 0.5rem; }
+.chat-info-panel {
+  width: 240px; min-width: 200px; flex-shrink: 0;
+  border-left: 1px solid #e9ecef; background: #fafbfc;
+  display: flex; flex-direction: column; overflow-y: auto; padding: 1rem;
+}
+.chat-info-panel.hidden { display: none !important; }
+.chat-info-panel h6 { font-weight: 600; color: var(--perch-navy); margin-bottom: 0.75rem; }
+.member-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0; font-size: 0.85rem; }
+.member-avatar {
+  width: 28px; height: 28px; min-width: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--perch-navy), #2a4a9e);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; font-weight: 600;
+}
+.member-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.message-sender-name { font-size: 0.72rem; font-weight: 600; color: var(--perch-navy); margin-bottom: 0.15rem; margin-left: 0.25rem; }
+.user-search-item {
+  display: flex; align-items: center; gap: 0.65rem; padding: 0.6rem 0.5rem;
+  cursor: pointer; border-radius: 0.5rem; transition: background-color 0.15s;
+}
+.user-search-item:hover { background-color: #eef1f6; }
+.user-search-item.selected { background-color: #e3e8f0; }
+.user-check {
+  width: 18px; height: 18px; min-width: 18px; border-radius: 50%;
+  border: 2px solid #ccc; display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; color: #fff; transition: all 0.15s;
+}
+.user-search-item.selected .user-check { background: var(--perch-navy); border-color: var(--perch-navy); }
+.selected-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
+.selected-chip {
+  display: flex; align-items: center; gap: 0.3rem; background: #e3e8f0;
+  border-radius: 1rem; padding: 0.15rem 0.5rem 0.15rem 0.75rem;
+  font-size: 0.8rem; color: var(--perch-navy);
+}
+.chip-remove { cursor: pointer; opacity: 0.6; line-height: 1; }
+.chip-remove:hover { opacity: 1; }
+.user-type-badge {
+  font-size: 0.63rem; padding: 0.1rem 0.4rem; border-radius: 1rem;
+  background: #e9ecef; color: #555; text-transform: capitalize;
+}
+.user-type-badge.lessor { background: #fef3cd; color: #856404; }
+@media (max-width: 767.98px) {
+  .chat-info-panel { display: none !important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container" id="chatContainer">
+
+  <!-- Sidebar -->
+  <div class="chat-sidebar" id="chatSidebar">
+    <div class="chat-sidebar-header">
+      <h5 class="mb-0">Messages</h5>
+      <button class="btn btn-sm btn-primary" id="startChatBtn">
+        <i class="bi bi-plus-lg me-1"></i>New Chat
+      </button>
+    </div>
+    <div class="conversation-list" id="conversationList">
+      <div class="conversation-empty" id="conversationEmpty">
+        <i class="bi bi-chat-dots" style="font-size:2rem;opacity:0.3;"></i>
+        <p class="text-muted small mt-2 mb-0">No conversations yet</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main chat -->
+  <div class="chat-main" id="chatMain">
+    <div class="chat-placeholder" id="chatPlaceholder">
+      <i class="bi bi-chat-square-text" style="font-size:3rem;opacity:0.15;"></i>
+      <p class="text-muted mt-3 mb-1">Select a conversation</p>
+      <p class="text-muted small">or start a new chat to begin messaging</p>
+    </div>
+
+    <div class="chat-active hidden" id="chatActive">
+      <div class="chat-header" id="chatHeader">
+        <button class="btn btn-link text-muted chat-back-btn d-md-none" id="chatBackBtn">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <div class="chat-header-avatar" id="chatHeaderAvatar"></div>
+        <div class="chat-header-info">
+          <h6 class="mb-0" id="chatHeaderName"></h6>
+          <small class="text-muted" id="chatHeaderSub" style="display:none;"></small>
+        </div>
+        <div class="chat-header-actions">
+          <button class="btn btn-sm btn-outline-secondary d-none" id="manageMembersBtn" title="Members">
+            <i class="bi bi-people"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chatMessages"></div>
+
+      <div class="chat-input-area">
+        <form id="chatForm" autocomplete="off">
+          <div class="input-group">
+            <input type="text" class="form-control" id="chatInput" placeholder="Type a message…" maxlength="2000" />
+            <button class="btn btn-primary" type="submit">
+              <i class="bi bi-send"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Members panel (groups only) -->
+  <div class="chat-info-panel hidden" id="chatInfoPanel">
+    <h6><i class="bi bi-people-fill me-1"></i>Members</h6>
+    <div id="memberList"></div>
+    <hr class="my-2">
+    <button class="btn btn-sm btn-outline-danger w-100" id="leaveGroupBtn">
+      <i class="bi bi-box-arrow-right me-1"></i>Leave group
+    </button>
+  </div>
+</div>
+
+<!-- New Chat Modal -->
+<div class="modal fade" id="startChatModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">New Conversation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs mb-3">
+          <li class="nav-item">
+            <button class="nav-link active" id="tabDirect">Direct Message</button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="tabGroup">Group Chat</button>
+          </li>
+        </ul>
+
+        <!-- Direct tab -->
+        <div id="directTab">
+          <div class="input-group mb-2">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" id="directSearchInput" placeholder="Search by name or email…" />
+          </div>
+          <div class="mb-3">
+            <select class="form-select form-select-sm" id="directTypeFilter" style="width:auto;">
+              <option value="all">All users</option>
+              <option value="student">Students only</option>
+              <option value="lessor">Lessors only</option>
+            </select>
+          </div>
+          <div id="directSearchResults" class="student-search-results">
+            <p class="text-muted small text-center mt-3">Type at least 2 characters to search</p>
+          </div>
+        </div>
+
+        <!-- Group tab -->
+        <div id="groupTab" style="display:none;">
+          <input type="text" class="form-control mb-3" id="groupNameInput" placeholder="Group name (optional)" maxlength="100" />
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <label class="form-label mb-0 text-muted" style="font-size:0.82rem;white-space:nowrap;">Filter:</label>
+            <select class="form-select form-select-sm" id="groupTypeFilter" style="width:auto;">
+              <option value="all">All users</option>
+              <option value="student">Students only</option>
+              <option value="lessor">Lessors only</option>
+            </select>
+          </div>
+          <div class="input-group mb-2">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" id="groupSearchInput" placeholder="Add members…" />
+          </div>
+          <div id="selectedChips" class="selected-chips"></div>
+          <div id="groupSearchResults" class="student-search-results">
+            <p class="text-muted small text-center mt-2">Type at least 2 characters to search</p>
+          </div>
+          <div class="mt-3">
+            <button class="btn btn-primary w-100" id="createGroupBtn" disabled>
+              <i class="bi bi-people-fill me-1"></i>Create Group
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  'use strict';
+
+  const CURRENT_USER_ID = {{ user.id }};
+  const API_BASE = '/chat/api';
+  const WS_SCHEME = window.location.protocol === 'https:' ? 'wss' : 'ws';
+
+  let conversations = [];
+  let activeConversationId = null;
+  let activeConvIsGroup = false;
+  let activeConvCreatedBy = null;
+  let activeConvParticipants = [];
+  let chatSocket = null;
+
+  const $ = id => document.getElementById(id);
+  const conversationList = $('conversationList');
+  const conversationEmpty = $('conversationEmpty');
+  const chatPlaceholder = $('chatPlaceholder');
+  const chatActive = $('chatActive');
+  const chatMessages = $('chatMessages');
+  const chatInput = $('chatInput');
+  const chatHeaderName = $('chatHeaderName');
+  const chatHeaderSub = $('chatHeaderSub');
+  const chatHeaderAvatar = $('chatHeaderAvatar');
+  const manageMembersBtn = $('manageMembersBtn');
+  const chatInfoPanel = $('chatInfoPanel');
+  const memberList = $('memberList');
+  const chatSidebar = $('chatSidebar');
+  const chatMain = $('chatMain');
+
+  // ── Helpers ───────────────────────────────────────────────
+
+  function getInitials(name) {
+    const parts = (name || '').trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return (name || '??').slice(0, 2).toUpperCase();
+  }
+
+  function formatTime(isoStr) {
+    const d = new Date(isoStr);
+    const diffDays = Math.floor((Date.now() - d) / 86400000);
+    if (diffDays === 0) return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return d.toLocaleDateString([], { weekday: 'short' });
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  }
+
+  function truncate(text, n) {
+    if (!text) return '';
+    return text.length > n ? text.slice(0, n) + '…' : text;
+  }
+
+  function esc(text) {
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+  }
+
+  function getCookie(name) {
+    const v = `; ${document.cookie}`;
+    const p = v.split(`; ${name}=`);
+    if (p.length === 2) return p.pop().split(';').shift();
+  }
+
+  function convDisplayName(conv) {
+    if (conv.name) return conv.name;
+    const others = conv.participants.filter(p => p.id !== CURRENT_USER_ID);
+    return others.length ? others.map(p => p.name).join(', ') : 'You';
+  }
+
+  // ── API ───────────────────────────────────────────────────
+
+  async function fetchConversations() {
+    const r = await fetch(`${API_BASE}/conversations/`);
+    const d = await r.json();
+    conversations = d.conversations || [];
+    renderConversationList();
+  }
+
+  async function fetchMessages(convId) {
+    const r = await fetch(`${API_BASE}/conversations/${convId}/messages/`);
+    const d = await r.json();
+    return d.messages || [];
+  }
+
+  async function apiCreateConversation(userIds, name) {
+    const r = await fetch(`${API_BASE}/conversations/create/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify({ user_ids: userIds, name: name || '' }),
+    });
+    return r.json();
+  }
+
+  async function apiSearchUsers(query, type) {
+    const r = await fetch(`${API_BASE}/users/search/?q=${encodeURIComponent(query)}&type=${encodeURIComponent(type)}`);
+    const d = await r.json();
+    return d.users || [];
+  }
+
+  async function apiRemoveParticipant(convId, userId) {
+    return fetch(`${API_BASE}/conversations/${convId}/participants/${userId}/`, {
+      method: 'DELETE',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    });
+  }
+
+  // ── Sidebar ───────────────────────────────────────────────
+
+  function renderConversationList() {
+    conversationList.querySelectorAll('.conversation-item').forEach(el => el.remove());
+    conversationEmpty.style.display = conversations.length ? 'none' : 'flex';
+
+    conversations.forEach(conv => {
+      const el = document.createElement('div');
+      el.className = 'conversation-item' + (conv.id === activeConversationId ? ' active' : '');
+      el.dataset.id = conv.id;
+
+      const name = convDisplayName(conv);
+      const isGroup = conv.is_group;
+      const avatar = isGroup
+        ? `<div class="conv-avatar group-avatar"><i class="bi bi-people-fill"></i></div>`
+        : `<div class="conv-avatar">${esc(getInitials(name))}</div>`;
+
+      const lm = conv.last_message;
+      let preview = 'No messages yet';
+      if (lm.content) {
+        const who = lm.sender_id === CURRENT_USER_ID ? 'You' : (isGroup && lm.sender_name ? lm.sender_name.split(' ')[0] : null);
+        preview = (who ? who + ': ' : '') + truncate(lm.content, 40);
+      }
+
+      el.innerHTML = `
+        ${avatar}
+        <div class="conv-info">
+          <div class="conv-name-row">
+            <span class="conv-name">${esc(name)}</span>
+            <span class="conv-time">${lm.timestamp ? esc(formatTime(lm.timestamp)) : ''}</span>
+          </div>
+          <p class="conv-preview">${esc(preview)}</p>
+        </div>`;
+
+      el.addEventListener('click', () => openConversation(conv.id));
+      conversationList.appendChild(el);
+    });
+  }
+
+  // ── Messages ──────────────────────────────────────────────
+
+  function renderMessages(messages) {
+    chatMessages.innerHTML = '';
+    messages.forEach(appendMessage);
+    scrollToBottom();
+  }
+
+  function appendMessage(msg) {
+    const isMine = msg.sender_id === CURRENT_USER_ID;
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble ' + (isMine ? 'message-sent' : 'message-received');
+    if (msg.id || msg.message_id) bubble.dataset.messageId = msg.id || msg.message_id;
+
+    const senderLabel = (!isMine && activeConvIsGroup && msg.sender_name)
+      ? `<div class="message-sender-name">${esc(msg.sender_name)}</div>` : '';
+
+    bubble.innerHTML = `
+      ${senderLabel}
+      <div class="message-content">${esc(msg.content || msg.message)}</div>
+      <div class="message-meta">${msg.timestamp ? esc(formatTime(msg.timestamp)) : ''}</div>`;
+
+    chatMessages.appendChild(bubble);
+  }
+
+  function scrollToBottom() { chatMessages.scrollTop = chatMessages.scrollHeight; }
+
+  // ── Open conversation ─────────────────────────────────────
+
+  async function openConversation(convId) {
+    activeConversationId = convId;
+    chatSidebar.classList.add('chat-sidebar-hidden');
+    chatMain.classList.add('chat-main-visible');
+
+    conversationList.querySelectorAll('.conversation-item').forEach(el => {
+      el.classList.toggle('active', +el.dataset.id === convId);
+    });
+
+    chatPlaceholder.classList.add('hidden');
+    chatActive.classList.remove('hidden');
+    chatInfoPanel.classList.add('hidden');
+
+    const conv = conversations.find(c => c.id === convId);
+    if (conv) {
+      activeConvIsGroup = conv.is_group;
+      activeConvCreatedBy = conv.created_by_id;
+      activeConvParticipants = conv.participants.slice();
+      updateChatHeader(conv);
+      manageMembersBtn.classList.toggle('d-none', !conv.is_group);
+    }
+
+    const messages = await fetchMessages(convId);
+    renderMessages(messages);
+    connectWebSocket(convId);
+    chatInput.focus();
+  }
+
+  function updateChatHeader(conv) {
+    const name = convDisplayName(conv);
+    chatHeaderName.textContent = name;
+    if (conv.is_group) {
+      const n = conv.participants.length;
+      chatHeaderSub.textContent = `${n} member${n !== 1 ? 's' : ''}`;
+      chatHeaderSub.style.display = 'block';
+      chatHeaderAvatar.className = 'chat-header-avatar group-avatar';
+      chatHeaderAvatar.innerHTML = '<i class="bi bi-people-fill"></i>';
+    } else {
+      chatHeaderSub.style.display = 'none';
+      chatHeaderAvatar.className = 'chat-header-avatar';
+      chatHeaderAvatar.textContent = getInitials(name);
+    }
+  }
+
+  // ── Members panel ─────────────────────────────────────────
+
+  manageMembersBtn.addEventListener('click', () => {
+    if (chatInfoPanel.classList.contains('hidden')) {
+      renderMemberList();
+      chatInfoPanel.classList.remove('hidden');
+    } else {
+      chatInfoPanel.classList.add('hidden');
+    }
+  });
+
+  function renderMemberList() {
+    memberList.innerHTML = '';
+    const isCreator = activeConvCreatedBy === CURRENT_USER_ID;
+    activeConvParticipants.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'member-item';
+      item.innerHTML = `
+        <div class="member-avatar">${esc(p.initials || getInitials(p.name))}</div>
+        <span class="member-name">${esc(p.name)}${p.is_self ? ' <span class="text-muted">(you)</span>' : ''}</span>
+        ${isCreator && !p.is_self ? `<button class="btn btn-sm btn-outline-danger py-0 px-1" data-uid="${p.id}"><i class="bi bi-x-lg" style="font-size:0.65rem;"></i></button>` : ''}`;
+      memberList.appendChild(item);
+    });
+    memberList.querySelectorAll('[data-uid]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Remove this member?')) return;
+        await apiRemoveParticipant(activeConversationId, +btn.dataset.uid);
+      });
+    });
+  }
+
+  $('leaveGroupBtn').addEventListener('click', async () => {
+    if (!confirm('Leave this group?')) return;
+    await apiRemoveParticipant(activeConversationId, CURRENT_USER_ID);
+    chatInfoPanel.classList.add('hidden');
+    chatActive.classList.add('hidden');
+    chatPlaceholder.classList.remove('hidden');
+    activeConversationId = null;
+    if (chatSocket) { chatSocket.close(); chatSocket = null; }
+    await fetchConversations();
+  });
+
+  // ── WebSocket ─────────────────────────────────────────────
+
+  function connectWebSocket(convId) {
+    if (chatSocket) { chatSocket.close(); chatSocket = null; }
+    const ws = new WebSocket(`${WS_SCHEME}://${window.location.host}/ws/chat/${convId}/`);
+    chatSocket = ws;
+
+    ws.onmessage = function (e) {
+      const data = JSON.parse(e.data);
+
+      if (data.type === 'chat_message') {
+        appendMessage({ id: data.message_id, sender_id: data.sender_id, sender_name: data.sender_name, content: data.message, timestamp: data.timestamp });
+        scrollToBottom();
+        const conv = conversations.find(c => c.id === convId);
+        if (conv) {
+          conv.last_message = { content: data.message, sender_id: data.sender_id, sender_name: data.sender_name, timestamp: data.timestamp };
+          conv.updated_at = data.timestamp;
+          conversations.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+          renderConversationList();
+        }
+      }
+
+      if (data.type === 'participant_update') {
+        if (data.action === 'removed' && data.user_id === CURRENT_USER_ID) {
+          ws.close();
+          chatActive.classList.add('hidden');
+          chatInfoPanel.classList.add('hidden');
+          chatPlaceholder.classList.remove('hidden');
+          activeConversationId = null;
+          fetchConversations();
+          return;
+        }
+        activeConvParticipants = data.participants;
+        const conv = conversations.find(c => c.id === convId);
+        if (conv) { conv.participants = data.participants; updateChatHeader(conv); }
+        if (!chatInfoPanel.classList.contains('hidden')) renderMemberList();
+      }
+    };
+
+    ws.onclose = e => console.log('WS closed', e.code);
+    ws.onerror = e => console.error('WS error', e);
+  }
+
+  // ── Send ──────────────────────────────────────────────────
+
+  $('chatForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const content = chatInput.value.trim();
+    if (!content || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+    chatSocket.send(JSON.stringify({ message: content }));
+    chatInput.value = '';
+    chatInput.focus();
+  });
+
+  $('chatBackBtn').addEventListener('click', () => {
+    chatSidebar.classList.remove('chat-sidebar-hidden');
+    chatMain.classList.remove('chat-main-visible');
+  });
+
+  // ── New Chat Modal ────────────────────────────────────────
+
+  let startChatModal = null;
+  let groupSelectedUsers = [];
+
+  $('startChatBtn').addEventListener('click', () => {
+    if (!startChatModal) startChatModal = new bootstrap.Modal($('startChatModal'));
+    resetModal();
+    startChatModal.show();
+    setTimeout(() => $('directSearchInput').focus(), 300);
+  });
+
+  function resetModal() {
+    ['directSearchInput', 'groupNameInput', 'groupSearchInput'].forEach(id => { $(id).value = ''; });
+    $('directSearchResults').innerHTML = '<p class="text-muted small text-center mt-3">Type at least 2 characters to search</p>';
+    $('groupSearchResults').innerHTML = '<p class="text-muted small text-center mt-2">Type at least 2 characters to search</p>';
+    $('directTypeFilter').value = 'all';
+    $('groupTypeFilter').value = 'all';
+    groupSelectedUsers = [];
+    renderChips();
+    switchTab('direct');
+  }
+
+  function switchTab(tab) {
+    $('directTab').style.display = tab === 'direct' ? 'block' : 'none';
+    $('groupTab').style.display = tab === 'group' ? 'block' : 'none';
+    $('tabDirect').classList.toggle('active', tab === 'direct');
+    $('tabGroup').classList.toggle('active', tab === 'group');
+  }
+
+  $('tabDirect').addEventListener('click', () => switchTab('direct'));
+  $('tabGroup').addEventListener('click', () => switchTab('group'));
+
+  // Direct tab
+  let directTimer = null;
+  function doDirectSearch() {
+    clearTimeout(directTimer);
+    const q = $('directSearchInput').value.trim();
+    if (q.length < 2) { $('directSearchResults').innerHTML = '<p class="text-muted small text-center mt-3">Type at least 2 characters to search</p>'; return; }
+    directTimer = setTimeout(async () => {
+      $('directSearchResults').innerHTML = '<p class="text-muted small text-center mt-3"><i class="bi bi-arrow-repeat spin"></i> Searching…</p>';
+      const users = await apiSearchUsers(q, $('directTypeFilter').value);
+      if (!users.length) { $('directSearchResults').innerHTML = '<p class="text-muted small text-center mt-3">No users found</p>'; return; }
+      $('directSearchResults').innerHTML = '';
+      users.forEach(u => {
+        const item = document.createElement('div');
+        item.className = 'user-search-item';
+        item.innerHTML = `
+          <div class="conv-avatar" style="width:36px;height:36px;font-size:0.75rem;flex-shrink:0;">${esc(getInitials(u.name))}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+              <span class="fw-medium">${esc(u.name)}</span>
+              <span class="user-type-badge ${u.user_type === 'realtor' ? 'lessor' : ''}">${u.user_type === 'realtor' ? 'lessor' : esc(u.user_type)}</span>
+            </div>
+            <small class="text-muted">${esc(u.email)}</small>
+          </div>`;
+        item.addEventListener('click', async () => {
+          const res = await apiCreateConversation([u.id], '');
+          if (res.conversation) { startChatModal.hide(); await fetchConversations(); openConversation(res.conversation.id); }
+        });
+        $('directSearchResults').appendChild(item);
+      });
+    }, 300);
+  }
+  $('directSearchInput').addEventListener('input', doDirectSearch);
+  $('directTypeFilter').addEventListener('change', doDirectSearch);
+
+  // Group tab
+  let groupTimer = null;
+  function doGroupSearch() {
+    clearTimeout(groupTimer);
+    const q = $('groupSearchInput').value.trim();
+    if (q.length < 2) { $('groupSearchResults').innerHTML = '<p class="text-muted small text-center mt-2">Type at least 2 characters to search</p>'; return; }
+    groupTimer = setTimeout(async () => {
+      $('groupSearchResults').innerHTML = '<p class="text-muted small text-center mt-2"><i class="bi bi-arrow-repeat spin"></i> Searching…</p>';
+      const users = await apiSearchUsers(q, $('groupTypeFilter').value);
+      if (!users.length) { $('groupSearchResults').innerHTML = '<p class="text-muted small text-center mt-2">No users found</p>'; return; }
+      $('groupSearchResults').innerHTML = '';
+      users.forEach(u => {
+        const sel = groupSelectedUsers.some(s => s.id === u.id);
+        const item = document.createElement('div');
+        item.className = 'user-search-item' + (sel ? ' selected' : '');
+        item.innerHTML = `
+          <div class="user-check">${sel ? '<i class="bi bi-check"></i>' : ''}</div>
+          <div class="conv-avatar" style="width:32px;height:32px;font-size:0.7rem;flex-shrink:0;">${esc(getInitials(u.name))}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+              <span class="fw-medium">${esc(u.name)}</span>
+              <span class="user-type-badge ${u.user_type === 'realtor' ? 'lessor' : ''}">${u.user_type === 'realtor' ? 'lessor' : esc(u.user_type)}</span>
+            </div>
+            <small class="text-muted">${esc(u.email)}</small>
+          </div>`;
+        item.addEventListener('click', () => toggleGroupUser(u));
+        $('groupSearchResults').appendChild(item);
+      });
+    }, 300);
+  }
+  $('groupSearchInput').addEventListener('input', doGroupSearch);
+  $('groupTypeFilter').addEventListener('change', doGroupSearch);
+
+  function toggleGroupUser(u) {
+    const idx = groupSelectedUsers.findIndex(s => s.id === u.id);
+    if (idx === -1) {
+      if (groupSelectedUsers.length >= 9) { alert('Maximum 9 members in a group.'); return; }
+      groupSelectedUsers.push(u);
+    } else {
+      groupSelectedUsers.splice(idx, 1);
+    }
+    renderChips();
+    doGroupSearch();
+  }
+
+  function renderChips() {
+    const chips = $('selectedChips');
+    chips.innerHTML = '';
+    groupSelectedUsers.forEach(u => {
+      const chip = document.createElement('div');
+      chip.className = 'selected-chip';
+      chip.innerHTML = `<span>${esc(u.name.split(' ')[0])}</span><span class="chip-remove ms-1">✕</span>`;
+      chip.querySelector('.chip-remove').addEventListener('click', () => {
+        groupSelectedUsers = groupSelectedUsers.filter(s => s.id !== u.id);
+        renderChips();
+        doGroupSearch();
+      });
+      chips.appendChild(chip);
+    });
+    $('createGroupBtn').disabled = groupSelectedUsers.length < 2;
+  }
+
+  $('createGroupBtn').addEventListener('click', async () => {
+    if (groupSelectedUsers.length < 2) return;
+    const res = await apiCreateConversation(groupSelectedUsers.map(u => u.id), $('groupNameInput').value.trim());
+    if (res.conversation) { startChatModal.hide(); await fetchConversations(); openConversation(res.conversation.id); }
+  });
+
+  // ── Init ──────────────────────────────────────────────────
+  fetchConversations();
+})();
+</script>
+{% endblock %}
