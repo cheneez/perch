@@ -69,6 +69,11 @@ class PerchAdminSite(AdminSite):
                         'add_url': reverse('admin:accounts_profile_add'),
                     },
                     {
+                        'label': 'Favorites',
+                        'admin_url': reverse('admin:accounts_favorite_changelist'),
+                        'add_url': reverse('admin:accounts_favorite_add'),
+                    },
+                    {
                         'label': 'Student profiles',
                         'admin_url': reverse('admin:student_studentprofile_changelist'),
                         'add_url': reverse('admin:student_studentprofile_add'),

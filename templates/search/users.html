@@ -40,11 +40,7 @@
         {% endif %}
       </div>
       <div>
-        {% if row.kind == 'student' %}
-        <a class="btn btn-sm btn-outline-primary" href="{% url 'student:public_profile' user_id=row.p.user_id %}">View profile</a>
-        {% else %}
-        <a class="btn btn-sm btn-outline-primary" href="{% url 'lessor:public_profile' user_id=row.p.user_id %}">View profile</a>
-        {% endif %}
+        <a class="btn btn-sm btn-outline-primary" href="{% url viewer_profile_namespace|add:':public_profile' user_id=row.p.user_id %}">View profile</a>
       </div>
     </li>
     {% endfor %}

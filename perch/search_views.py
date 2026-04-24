@@ -29,6 +29,8 @@ def _name_query(q: str) -> Q:
 def user_search(request):
     """Search users by name (first, last, username) across students + lessors."""
     q = (request.GET.get('q') or '').strip()
+    viewer_profile = Profile.objects.filter(user=request.user).first()
+    viewer_profile_namespace = 'lessor' if viewer_profile and viewer_profile.user_type in ('realtor', 'lessor') else 'student'
 
     results = []
     if len(q) >= 2:
@@ -73,5 +75,6 @@ def user_search(request):
             'q': q,
             'results': results,
             'search_too_short': bool(q) and len(q) < 2,
+            'viewer_profile_namespace': viewer_profile_namespace,
         },
     )
