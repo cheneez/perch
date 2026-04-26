@@ -129,17 +129,40 @@
   </div>
 
   <!-- Star rating -->
-  <div class="mb-4 d-flex align-items-center gap-2">
-    <span class="fw-medium">Review:</span>
-    <span>
-      {% for i in "12345" %}
-        {% if forloop.counter <= listing.avg_rating %}
-          <i class="bi bi-star-fill text-warning" style="font-size:1.15rem;"></i>
-        {% else %}
-          <i class="bi bi-star text-warning" style="font-size:1.15rem; opacity:0.4;"></i>
-        {% endif %}
-      {% endfor %}
-    </span>
+  <div class="mb-4">
+    <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+      <div class="d-flex align-items-center gap-2">
+        <span class="fw-medium">Current Rating:</span>
+        <span>
+          {% for i in "12345" %}
+            {% if forloop.counter <= listing.avg_rating %}
+              <i class="bi bi-star-fill text-warning" style="font-size:1.15rem;"></i>
+            {% else %}
+              <i class="bi bi-star text-warning" style="font-size:1.15rem; opacity:0.4;"></i>
+            {% endif %}
+          {% endfor %}
+        </span>
+        <span class="text-muted small">({{ listing.avg_rating }})</span>
+      </div>
+      {% if user.is_authenticated %}
+      <form method="post" action="{% url 'listings:property-review' listing.pk %}" class="d-flex align-items-center gap-2">
+        {% csrf_token %}
+        <input type="hidden" id="selected-stars" name="stars" value="{% if user_review %}{{ user_review.stars }}{% else %}0{% endif %}">
+        <div id="review-stars" class="d-flex align-items-center gap-1">
+          {% for i in "12345" %}
+            <button type="button"
+                    class="btn btn-link p-0 review-star"
+                    data-stars="{{ forloop.counter }}"
+                    aria-label="Rate {{ forloop.counter }} stars"
+                    style="text-decoration:none;">
+              <i class="bi bi-star text-warning" style="font-size:1.2rem;"></i>
+            </button>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">Review</button>
+      </form>
+      {% endif %}
+    </div>
   </div>
 
   <form method="post" action="{% url 'listings:property-contact' listing.pk %}">
@@ -163,4 +186,40 @@
   </form>
 
 </div>
+<script>
+  (function () {
+    const starsInput = document.getElementById("selected-stars");
+    const stars = document.querySelectorAll(".review-star");
+    if (!starsInput || !stars.length) return;
+
+    function paintStars(selected) {
+      stars.forEach((btn, idx) => {
+        const icon = btn.querySelector("i");
+        if (!icon) return;
+        if (idx < selected) {
+          icon.classList.remove("bi-star");
+          icon.classList.add("bi-star-fill");
+          icon.style.opacity = "1";
+        } else {
+          icon.classList.remove("bi-star-fill");
+          icon.classList.add("bi-star");
+          icon.style.opacity = "0.6";
+        }
+      });
+    }
+
+    let selectedStars = parseInt(starsInput.value || "0", 10);
+    if (Number.isNaN(selectedStars) || selectedStars < 0) selectedStars = 0;
+    paintStars(selectedStars);
+
+    stars.forEach((btn) => {
+      btn.addEventListener("click", function () {
+        const value = parseInt(this.dataset.stars || "0", 10);
+        if (Number.isNaN(value)) return;
+        starsInput.value = String(value);
+        paintStars(value);
+      });
+    });
+  })();
+</script>
 {% endblock %}
