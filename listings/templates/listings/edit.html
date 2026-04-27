@@ -1,5 +1,11 @@
 {% extends 'base.html' %}
 {% block title %}Edit Listing — Housing Platform{% endblock %}
+
+{% block extra_head %}
+{% if google_maps_api_key %}
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&loading=async&callback=initPlacesAutocomplete"></script>
+{% endif %}
+{% endblock %}
 {% block content %}
 <div class="container-fluid">
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
@@ -64,4 +70,8 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% include "listings/_places_autocomplete_js.html" %}
 {% endblock %}

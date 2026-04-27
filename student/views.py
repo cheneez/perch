@@ -87,6 +87,14 @@ class FindHousingView(View):
 
         qs = qs.filter(distance_miles__lte=radius_float).order_by('-created_at')
 
+        def primary_image_url(listing):
+            image = listing.images.first()
+            if not image:
+                return ''
+            if image.image:
+                return image.image.url
+            return image.image_url or ''
+
         map_pins = json.dumps([
             {
                 'pk': l.pk,
@@ -94,6 +102,7 @@ class FindHousingView(View):
                 'lng': l.longitude,
                 'title': l.title,
                 'price': str(l.price_monthly),
+                'image_url': primary_image_url(l),
                 'url': reverse('listings:property', args=[l.pk]),
             }
             for l in qs if l.latitude is not None and l.longitude is not None

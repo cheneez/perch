@@ -4,7 +4,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
 
-from listings.models import Listing
+from listings.models import Listing, ListingImage
 
 
 def _make_listing(owner, distance_miles, **kwargs):
@@ -52,6 +52,18 @@ class FindHousingViewTest(TestCase):
         pins = json.loads(response.context['map_pins'])
         self.assertEqual(len(pins), 1)
         self.assertIn('/listings/property/', pins[0]['url'])
+
+    def test_map_pins_include_primary_image_url(self):
+        listing = _make_listing(self.owner, distance_miles=0.5)
+        ListingImage.objects.create(
+            listing=listing,
+            image_url='https://example.com/house.jpg',
+        )
+
+        response = self.client.get(self.url)
+        pins = json.loads(response.context['map_pins'])
+
+        self.assertEqual(pins[0]['image_url'], 'https://example.com/house.jpg')
 
     def test_google_maps_key_in_context(self):
         response = self.client.get(self.url)

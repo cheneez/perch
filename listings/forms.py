@@ -28,7 +28,7 @@ class ListingForm(forms.ModelForm):
                     "placeholder": "Describe the space, amenities, and anything tenants should know.",
                 }
             ),
-            "address": forms.TextInput(attrs={"class": "form-control", "placeholder": "123 Main St, City, ST"}),
+            "address": forms.TextInput(attrs={"class": "form-control", "placeholder": "123 Main St, City, ST", "autocomplete": "off"}),
             "price_monthly": forms.NumberInput(attrs={"class": "form-control", "min": 0, "step": "0.01"}),
             "estimated_utilities_cost": forms.NumberInput(attrs={"class": "form-control", "min": 0, "step": "0.01"}),
             "security_deposit": forms.NumberInput(attrs={"class": "form-control", "min": 0, "step": "0.01"}),
@@ -37,7 +37,14 @@ class ListingForm(forms.ModelForm):
             "total_upfront_cost": forms.NumberInput(attrs={"class": "form-control", "min": 0, "step": "0.01"}),
             "bedrooms": forms.NumberInput(attrs={"class": "form-control", "min": 0, "step": 1}),
             "bathrooms": forms.NumberInput(attrs={"class": "form-control", "min": 0, "step": 1}),
-            "distance_miles": forms.NumberInput(attrs={"class": "form-control", "min": 0, "step": "0.1"}),
+            "distance_miles": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": 0,
+                    "step": "0.1",
+                    "readonly": "readonly",
+                }
+            ),
             "room_type": forms.Select(attrs={"class": "form-select"}),
             "lease_type": forms.Select(attrs={"class": "form-select"}),
             "status": forms.Select(attrs={"class": "form-select"}),

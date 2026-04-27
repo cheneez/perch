@@ -151,8 +151,12 @@ function initFHMap() {
       map: map,
     });
 
+    var popupImage = p.image_url
+      ? '<img src="' + p.image_url + '" alt="' + p.title + '" style="width:100%;height:100px;object-fit:cover;border-radius:10px;margin-bottom:8px;display:block;">'
+      : '';
     var popupHtml =
-      '<div style="font-family:\'DM Sans\',sans-serif;padding:6px 10px 8px;min-width:150px;">' +
+      '<div style="font-family:\'DM Sans\',sans-serif;padding:6px 10px 8px;min-width:180px;max-width:220px;">' +
+        popupImage +
         '<div style="font-weight:600;font-size:0.88rem;color:#1a1a2e;margin-bottom:3px;">' + p.title + '</div>' +
         '<div style="font-size:0.82rem;font-weight:700;color:#0f1f4b;">$' + parseFloat(p.price).toLocaleString() + '<span style="font-weight:400;color:#888;">/mo</span></div>' +
         '<div style="font-size:0.7rem;color:#aaa;margin-top:4px;letter-spacing:0.02em;">Click to view →</div>' +
@@ -191,7 +195,8 @@ function initFHMap() {
         map.panTo(markers[pk].getPosition());
         var pin = pins.find(function (p) { return String(p.pk) === pk; });
         infoWindow.setContent(
-          '<div style="font-family:\'DM Sans\',sans-serif;padding:6px 10px 8px;min-width:150px;">' +
+          '<div style="font-family:\'DM Sans\',sans-serif;padding:6px 10px 8px;min-width:180px;max-width:220px;">' +
+            (pin && pin.image_url ? '<img src="' + pin.image_url + '" alt="' + pin.title + '" style="width:100%;height:100px;object-fit:cover;border-radius:10px;margin-bottom:8px;display:block;">' : '') +
             '<div style="font-weight:600;font-size:0.88rem;color:#1a1a2e;margin-bottom:3px;">' + (pin ? pin.title : '') + '</div>' +
             (pin ? '<div style="font-size:0.82rem;font-weight:700;color:#0f1f4b;">$' + parseFloat(pin.price).toLocaleString() + '<span style="font-weight:400;color:#888;">/mo</span></div>' : '') +
           '</div>'
