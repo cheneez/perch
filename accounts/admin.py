@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.contrib.admin.sites import NotRegistered
 from django.contrib.auth.models import User
 
-from .models import Favorite
+from .models import Favorite, Profile
 
 
 try:
