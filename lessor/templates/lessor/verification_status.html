@@ -5,14 +5,86 @@
 
 {% block content %}
 <div class="profile-page container-fluid py-4">
-  <h1 class="h4 fw-bold mb-3">Verification status</h1>
-  <div class="card profile-card border-0 shadow-sm" style="max-width: 480px;">
+  <h1 class="h4 fw-bold mb-3">Verification Status</h1>
+
+  <div class="card profile-card border-0 shadow-sm" style="max-width: 560px;">
     <div class="card-body p-4">
-      {% if p.verified %}
-      <p class="mb-0"><span class="badge text-bg-success me-2">Verified</span> Your lessor account is verified.</p>
-      {% else %}
-      <p class="text-muted mb-0">You are not verified yet. Verification review will be available in a future update.</p>
+
+      {% if messages %}
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
       {% endif %}
+
+      {# ── VERIFIED ──────────────────────────────────────── #}
+      {% if latest and latest.status == 'verified' %}
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <i class="bi bi-patch-check-fill text-success fs-1"></i>
+        <div>
+          <h2 class="h5 fw-bold mb-1">You're Verified</h2>
+          <p class="mb-0 text-muted small">Your account has been verified.</p>
+        </div>
+      </div>
+      <p class="mb-0 text-muted small">Verified on {{ latest.reviewed_at|date:"N j, Y" }}</p>
+
+      {# ── PENDING ──────────────────────────────────────── #}
+      {% elif latest and latest.status == 'pending' %}
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <div class="spinner-border text-warning" role="status" style="width:2rem;height:2rem;">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <div>
+          <h2 class="h5 fw-bold mb-1">Verification Pending</h2>
+          <p class="mb-0 text-muted small">Your documents have been submitted and are under review. This usually takes 1–2 business days.</p>
+        </div>
+      </div>
+      <p class="mb-0 text-muted small">Submitted on {{ latest.submitted_at|date:"N j, Y" }}</p>
+
+      {# ── DECLINED ──────────────────────────────────────── #}
+      {% elif latest and latest.status == 'declined' %}
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <i class="bi bi-x-circle-fill text-danger fs-1"></i>
+        <div>
+          <h2 class="h5 fw-bold mb-1 text-danger">Verification Declined</h2>
+          <p class="mb-0 text-muted small">Reviewed on {{ latest.reviewed_at|date:"N j, Y" }}</p>
+        </div>
+      </div>
+      {% if latest.admin_feedback %}
+      <div class="alert alert-warning mt-3 mb-4" role="alert">
+        <p class="fw-semibold mb-1">Reason from reviewer:</p>
+        <p class="mb-0">{{ latest.admin_feedback }}</p>
+      </div>
+      {% endif %}
+      <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#resubmitForm" aria-expanded="false" aria-controls="resubmitForm">
+        Resubmit Verification
+      </button>
+      <div class="collapse mt-4" id="resubmitForm">
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          {% include 'lessor/includes/verification_form_fields.html' %}
+          <button type="submit" class="btn btn-primary mt-3">Submit for Verification</button>
+        </form>
+      </div>
+
+      {# ── UNVERIFIED (no request yet) ──────────────────── #}
+      {% else %}
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <i class="bi bi-patch-question fs-1 text-secondary"></i>
+        <div>
+          <h2 class="h5 fw-bold mb-1">Verify Your Account</h2>
+          <p class="mb-0 text-muted small">Upload your documents to get verified. Verified lessors receive a badge on their profile.</p>
+        </div>
+      </div>
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {% include 'lessor/includes/verification_form_fields.html' %}
+        <button type="submit" class="btn btn-primary mt-3">Submit for Verification</button>
+      </form>
+      {% endif %}
+
     </div>
   </div>
 </div>

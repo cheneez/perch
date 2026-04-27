@@ -3,7 +3,47 @@ from django.contrib.auth.models import User
 
 from accounts.utils_profile import process_profile_image_upload
 
-from .models import LessorProfile
+from .models import LessorProfile, VerificationRequest
+
+_ALLOWED_DOC_TYPES = {'.jpg', '.jpeg', '.png', '.pdf'}
+_MAX_DOC_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
+def _clean_doc_file(f):
+    if not f:
+        return f
+    import os
+    ext = os.path.splitext(f.name)[1].lower()
+    if ext not in _ALLOWED_DOC_TYPES:
+        raise forms.ValidationError('Only JPG, PNG, and PDF files are accepted.')
+    if f.size > _MAX_DOC_SIZE:
+        raise forms.ValidationError('File size must not exceed 10 MB.')
+    return f
+
+
+class VerificationRequestForm(forms.Form):
+    government_id = forms.FileField(
+        label='Government-Issued Photo ID',
+        help_text="Driver's license, passport, or other government-issued photo ID.",
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.jpg,.jpeg,.png,.pdf',
+        }),
+    )
+    property_proof = forms.FileField(
+        label='Business License or Proof of Property Ownership',
+        help_text='Deed, tax bill, management agreement, or business license.',
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.jpg,.jpeg,.png,.pdf',
+        }),
+    )
+
+    def clean_government_id(self):
+        return _clean_doc_file(self.cleaned_data.get('government_id'))
+
+    def clean_property_proof(self):
+        return _clean_doc_file(self.cleaned_data.get('property_proof'))
 
 
 class LessorCreateProfileForm(forms.ModelForm):
