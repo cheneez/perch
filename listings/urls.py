@@ -10,5 +10,6 @@ urlpatterns = [
     path('detail/<int:pk>/', views.property_detail, name='listing-detail-legacy'),
     path('property/<int:pk>/', views.property_detail, name='property'),
     path('property/<int:pk>/contact/', views.contact_realtor, name='property-contact'),
+    path('property/<int:pk>/review/', views.submit_review, name='property-review'),
 ]
 app_name = 'listings'

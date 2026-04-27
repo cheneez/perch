@@ -154,3 +154,40 @@ class ListingFavorite(models.Model):
 
     def __str__(self):
         return f"{self.user_id} -> listing {self.listing_id}"
+
+
+class ListingReview(models.Model):
+    """A student's 1-5 star review for a listing."""
+
+    class Stars(models.IntegerChoices):
+        ONE = 1, "1 Star"
+        TWO = 2, "2 Stars"
+        THREE = 3, "3 Stars"
+        FOUR = 4, "4 Stars"
+        FIVE = 5, "5 Stars"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="listing_reviews",
+    )
+    listing = models.ForeignKey(
+        Listing,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+    )
+    stars = models.PositiveSmallIntegerField(choices=Stars.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("user", "listing"),
+                name="listings_listingreview_user_listing_uniq",
+            )
+        ]
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return f"{self.user_id} rated {self.listing_id}: {self.stars}"

@@ -4,12 +4,13 @@ import urllib.request
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from chat.models import Conversation, Message
 from .forms import ListingForm
-from .models import Listing, ListingFavorite, ListingImage
+from .models import Listing, ListingFavorite, ListingImage, ListingReview
 
 
 def _geocode(address):
@@ -110,14 +111,17 @@ def delete_listing(request, pk):
 def property_detail(request, pk):
     listing = get_object_or_404(Listing.objects.accessible_to(request.user), pk=pk)
     is_favorited = False
+    user_review = None
     if request.user.is_authenticated:
         is_favorited = ListingFavorite.objects.filter(user=request.user, listing=listing).exists()
+        user_review = ListingReview.objects.filter(user=request.user, listing=listing).first()
     return render(
         request,
         'listings/property.html',
         {
             'listing': listing,
             'is_favorited': is_favorited,
+            'user_review': user_review,
         },
     )
 
@@ -156,3 +160,34 @@ def contact_realtor(request, pk):
 
     messages.success(request, "Message sent to the realtor.")
     return redirect("student:find_housing")
+
+
+@login_required
+@require_POST
+def submit_review(request, pk):
+    listing = get_object_or_404(Listing.objects.accessible_to(request.user), pk=pk)
+    if request.user == listing.owner:
+        messages.error(request, "You cannot review your own listing.")
+        return redirect("listings:property", pk=listing.pk)
+
+    try:
+        stars = int(request.POST.get("stars", "0"))
+    except ValueError:
+        stars = 0
+
+    if stars < 1 or stars > 5:
+        messages.error(request, "Please choose a star rating between 1 and 5.")
+        return redirect("listings:property", pk=listing.pk)
+
+    ListingReview.objects.update_or_create(
+        user=request.user,
+        listing=listing,
+        defaults={"stars": stars},
+    )
+
+    avg = listing.reviews.aggregate(avg=Avg("stars"))["avg"] or 0.0
+    listing.avg_rating = round(float(avg), 2)
+    listing.save(update_fields=["avg_rating"])
+
+    messages.success(request, "Thanks! Your review was submitted.")
+    return redirect("listings:property", pk=listing.pk)
