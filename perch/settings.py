@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'lessor',
     'listings',
     'moderation',
+    'notifications',
     'chat',
 ]
 
@@ -88,6 +89,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'accounts.context_processors.user_profile_context',
+                'notifications.context_processors.unread_notification_count',
             ],
         },
     },

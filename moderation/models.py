@@ -59,3 +59,26 @@ class Report(models.Model):
         if target is None:
             return f'{self.content_type.app_label}.{self.content_type.model} #{self.object_id}'
         return str(target)
+
+
+class ReportReply(models.Model):
+    report = models.ForeignKey(
+        Report,
+        on_delete=models.CASCADE,
+        related_name='replies',
+    )
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='moderation_replies_sent',
+    )
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('created_at',)
+
+    def __str__(self):
+        return f'ReportReply({self.report_id})'

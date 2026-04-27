@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications — Perch{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4" style="max-width: 720px;">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 fw-bold mb-0">Notifications</h1>
+    {% if unread_count %}
+      <form method="post" action="{% url 'notifications:mark_all_read' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-secondary btn-sm">Mark all read</button>
+      </form>
+    {% endif %}
+  </div>
+
+  {% if not notifications %}
+    <div class="alert alert-secondary mb-0">No notifications yet.</div>
+  {% else %}
+    <div class="list-group border rounded shadow-sm">
+      {% for n in notifications %}
+        <div class="list-group-item py-3 {% if not n.read_at %}bg-light{% endif %}">
+          <div class="d-flex align-items-start justify-content-between gap-3">
+            <div class="min-w-0">
+              <div class="fw-semibold">{{ n.title }}</div>
+              {% if n.body %}
+                <div class="text-muted small mt-1">{{ n.body }}</div>
+              {% endif %}
+              <div class="text-muted small mt-2">{{ n.created_at }}</div>
+            </div>
+            <div class="text-nowrap">
+              {% if n.link_url %}
+                <a class="btn btn-sm btn-outline-primary" href="{{ n.link_url }}">View</a>
+              {% endif %}
+              {% if not n.read_at %}
+                <span class="badge text-bg-primary ms-2">New</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+

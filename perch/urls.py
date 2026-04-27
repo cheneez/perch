@@ -15,6 +15,7 @@ urlpatterns = [
     path("lessor/", include("lessor.urls")),
     path("listings/", include("listings.urls")),
     path("reports/", include("moderation.urls")),
+    path("notifications/", include("notifications.urls")),
     path("chat/", include("chat.urls")),
 ]
 
