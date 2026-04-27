@@ -1,4 +1,5 @@
 import json
+import re
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -15,6 +16,7 @@ from .models import Conversation, Message
 User = get_user_model()
 
 MAX_GROUP_SIZE = 10
+GROUP_INVITE_PATTERN = re.compile(r'^\[\[GROUP_INVITE:(\d+)\]\]')
 
 
 def _broadcast_participant_update(conv, action, changed_user):
@@ -68,6 +70,26 @@ def _participant_data(user, current_user_id, profile_cache=None):
         'initials': initials,
         'is_self': user.id == current_user_id,
     }
+
+
+def _group_invite_status_map(messages_list):
+    invite_ids = []
+    for msg in messages_list:
+        match = GROUP_INVITE_PATTERN.match(msg.content or '')
+        if match:
+            invite_ids.append(int(match.group(1)))
+
+    if not invite_ids:
+        return {}
+
+    try:
+        from groups.models import GroupInvite
+    except Exception:
+        return {}
+
+    return dict(
+        GroupInvite.objects.filter(id__in=invite_ids).values_list('id', 'status')
+    )
 
 
 @_chat_user_required
@@ -189,6 +211,7 @@ def conversation_messages(request, conversation_id):
 
     messages_qs = messages_qs.order_by('-created_at')[:50]
     messages_list = list(reversed(list(messages_qs)))
+    invite_status_map = _group_invite_status_map(messages_list)
 
     results = [
         {
@@ -197,6 +220,10 @@ def conversation_messages(request, conversation_id):
             'sender_name': msg.sender.get_full_name() or msg.sender.username,
             'content': msg.content,
             'timestamp': msg.created_at.isoformat(),
+            'invite_status': invite_status_map.get(
+                int(match.group(1)),
+                None,
+            ) if (match := GROUP_INVITE_PATTERN.match(msg.content or '')) else None,
         }
         for msg in messages_list
     ]

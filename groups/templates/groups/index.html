@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Groups — Perch{% endblock %}
+
+{% block extra_head %}
+<style>
+  .groups-shell { display: flex; gap: 1rem; min-height: 70vh; }
+  .groups-sidebar {
+    width: 320px; max-width: 100%; background: #fff; border: 1px solid #e7eaf0;
+    border-radius: 0.75rem; overflow: hidden;
+  }
+  .groups-list { max-height: 60vh; overflow-y: auto; }
+  .group-item {
+    display: block; padding: 0.85rem 1rem; text-decoration: none; color: inherit;
+    border-bottom: 1px solid #f0f2f5;
+  }
+  .group-item.active { background: #f3f6fb; border-left: 4px solid var(--perch-navy); padding-left: 0.75rem; }
+  .group-main { flex: 1; background: #fff; border: 1px solid #e7eaf0; border-radius: 0.75rem; padding: 1rem; }
+  .member-pill { font-size: 0.8rem; background: #edf2f8; color: #24324a; border-radius: 999px; padding: 0.2rem 0.55rem; }
+  .empty-state { min-height: 300px; display: flex; align-items: center; justify-content: center; text-align: center; color: #6c757d; }
+  .search-results { border: 1px solid #dee2e6; border-radius: 0.5rem; max-height: 220px; overflow-y: auto; }
+  .search-row { padding: 0.55rem 0.75rem; cursor: pointer; border-bottom: 1px solid #f1f3f5; }
+  .search-row:last-child { border-bottom: none; }
+  .search-row:hover, .search-row.selected { background: #f7f9fc; }
+  .group-listings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .group-listing-card {
+    display: block; background: #fff; border: 1px solid #e9ecef; border-radius: 12px;
+    overflow: hidden; text-decoration: none; color: inherit; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  }
+  .group-listing-card:hover { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.13); transform: translateY(-1px); }
+  .group-listing-img { width: 100%; height: 150px; object-fit: cover; display: block; background: #e9ecef; }
+  .group-listing-body { padding: 10px 12px; }
+  .group-listing-title {
+    font-weight: 600; margin-bottom: 2px; color: #1a1a2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .group-listing-address, .group-listing-meta { font-size: 0.82rem; color: #6c757d; margin-bottom: 0; }
+  .group-listing-shell { position: relative; }
+  .group-listing-unsave-form {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 3;
+  }
+  .group-listing-unsave-btn {
+    border: 0;
+    border-radius: 999px;
+    width: 34px;
+    height: 34px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #dc3545;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+  }
+  .group-listing-unsave-btn:hover { background: #fff; color: #b02a37; }
+  @media (max-width: 991px) {
+    .groups-shell { flex-direction: column; }
+    .groups-sidebar { width: 100%; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="groups-shell">
+    <aside class="groups-sidebar">
+      <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+        <h5 class="mb-0">Groups</h5>
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createGroupModal">
+          <i class="bi bi-plus-lg me-1"></i>Create
+        </button>
+      </div>
+      <div class="groups-list">
+        {% for group in groups %}
+          <a
+            class="group-item {% if active_group and active_group.id == group.id %}active{% endif %}"
+            href="{% url 'groups:detail' group_id=group.id %}"
+          >
+            <div class="fw-semibold">{{ group.name }}</div>
+            <div class="text-muted small">
+              {{ group.memberships.count }} member{{ group.memberships.count|pluralize }}
+            </div>
+          </a>
+        {% empty %}
+          <div class="p-3 text-muted small">No groups yet. Create your first group.</div>
+        {% endfor %}
+      </div>
+    </aside>
+
+    <section class="group-main">
+      {% if active_group %}
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+          <div>
+            <h4 class="mb-1">{{ active_group.name }}</h4>
+            <p class="text-muted mb-0">
+              Owner: {{ active_group.owner.get_full_name|default:active_group.owner.username }}
+            </p>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="{{ chat_url }}" class="btn btn-outline-primary">
+              <i class="bi bi-chat-dots me-1"></i>Open Group Chat
+            </a>
+            {% if is_owner %}
+              <button class="btn btn-primary" id="inviteMembersBtn">
+                <i class="bi bi-person-plus me-1"></i>Invite Members
+              </button>
+              <form method="post" action="{% url 'groups:delete' group_id=active_group.id %}" class="d-inline">
+                {% csrf_token %}
+                <button class="btn btn-danger" type="submit" id="deleteGroupBtn">
+                  <i class="bi bi-trash me-1"></i>Delete Group
+                </button>
+              </form>
+            {% else %}
+              <form method="post" action="{% url 'groups:leave' group_id=active_group.id %}">
+                {% csrf_token %}
+                <button class="btn btn-outline-danger" type="submit">
+                  <i class="bi bi-box-arrow-right me-1"></i>Leave Group
+                </button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if is_owner %}
+          <p class="text-muted small mb-3">
+            Pending invites: {{ pending_invites }}
+          </p>
+        {% endif %}
+
+        <div>
+          <h6 class="mb-2">Members</h6>
+          <div class="d-flex flex-wrap gap-2">
+            {% for membership in active_group.memberships.all %}
+              <span class="member-pill">
+                {{ membership.user.get_full_name|default:membership.user.username }}
+                {% if membership.user_id == active_group.owner_id %}(owner){% endif %}
+              </span>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <h6 class="mb-2">Group Saved Listings</h6>
+          {% if group_saved_listings %}
+            <div class="group-listings-grid">
+              {% for saved in group_saved_listings %}
+                <div class="group-listing-shell">
+                  <form method="post" action="{% url 'groups:remove_listing' %}" class="group-listing-unsave-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="group_id" value="{{ active_group.id }}">
+                    <input type="hidden" name="listing_id" value="{{ saved.listing.id }}">
+                    <input type="hidden" name="next" value="{% url 'groups:detail' active_group.id %}">
+                    <button type="submit" class="group-listing-unsave-btn" title="Remove from group" aria-label="Remove listing from group">
+                      <i class="bi bi-bookmark-x"></i>
+                    </button>
+                  </form>
+                  <a href="{% url 'listings:property' saved.listing.id %}" class="group-listing-card">
+                    {% with img=saved.listing.images.first %}
+                      {% if img and img.image %}
+                        <img src="{{ img.image.url }}" class="group-listing-img" alt="{{ saved.listing.title }}">
+                      {% elif img and img.image_url %}
+                        <img src="{{ img.image_url }}" class="group-listing-img" alt="{{ saved.listing.title }}">
+                      {% else %}
+                        <div class="group-listing-img d-flex align-items-center justify-content-center text-muted">
+                          <i class="bi bi-image"></i>
+                        </div>
+                      {% endif %}
+                    {% endwith %}
+                    <div class="group-listing-body">
+                      <p class="group-listing-title">{{ saved.listing.title }}</p>
+                      <p class="group-listing-address">{{ saved.listing.address }}</p>
+                      <p class="group-listing-meta">
+                        ${{ saved.listing.price_monthly|floatformat:0 }}/mo · {{ saved.listing.bedrooms }} bd · {{ saved.listing.bathrooms }} ba
+                      </p>
+                    </div>
+                  </a>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted small mb-0">No listings saved to this group yet.</p>
+          {% endif %}
+        </div>
+
+        {% if is_owner %}
+          <div class="mt-4" id="invitePanel" style="display:none;">
+            <h6 class="mb-2">Invite a student</h6>
+            <form method="post" action="{% url 'groups:invite' group_id=active_group.id %}" id="inviteForm">
+              {% csrf_token %}
+              <input type="hidden" name="invitee_id" id="inviteeIdInput">
+              <div class="input-group mb-2">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="inviteSearchInput"
+                  placeholder="Search students by name or email"
+                >
+              </div>
+              <div class="search-results mb-2" id="inviteSearchResults">
+                <div class="p-2 text-muted small text-center">Type at least 2 characters to search</div>
+              </div>
+              <button type="submit" class="btn btn-primary" id="sendInviteBtn" disabled>
+                Send Invite
+              </button>
+            </form>
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="empty-state">
+          <div>
+            <i class="bi bi-people" style="font-size:2.4rem; opacity:0.35;"></i>
+            <p class="mt-3 mb-1">Select a group from the left sidebar</p>
+            <p class="small mb-0">or create one to get started</p>
+          </div>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+<div class="modal fade" id="createGroupModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{% url 'groups:index' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Create Group</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label for="groupNameInput" class="form-label">Group name</label>
+          <input
+            type="text"
+            class="form-control"
+            id="groupNameInput"
+            name="group_name"
+            minlength="2"
+            maxlength="100"
+            required
+          >
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Group</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const inviteMembersBtn = document.getElementById('inviteMembersBtn');
+    const invitePanel = document.getElementById('invitePanel');
+    const inviteSearchInput = document.getElementById('inviteSearchInput');
+    const inviteSearchResults = document.getElementById('inviteSearchResults');
+    const inviteeIdInput = document.getElementById('inviteeIdInput');
+    const sendInviteBtn = document.getElementById('sendInviteBtn');
+    const deleteGroupBtn = document.getElementById('deleteGroupBtn');
+
+    if (deleteGroupBtn) {
+      deleteGroupBtn.addEventListener('click', (event) => {
+        if (!confirm('Delete this group and its chat permanently?')) {
+          event.preventDefault();
+        }
+      });
+    }
+
+    if (!inviteMembersBtn || !invitePanel) {
+      return;
+    }
+
+    let selectedUserId = null;
+    let searchTimer = null;
+
+    function selectUser(id) {
+      selectedUserId = id;
+      inviteeIdInput.value = id || '';
+      sendInviteBtn.disabled = !id;
+    }
+
+    inviteMembersBtn.addEventListener('click', () => {
+      invitePanel.style.display = invitePanel.style.display === 'none' ? 'block' : 'none';
+      if (invitePanel.style.display === 'block') {
+        inviteSearchInput.focus();
+      }
+    });
+
+    inviteSearchInput.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      const query = inviteSearchInput.value.trim();
+      if (query.length < 2) {
+        inviteSearchResults.innerHTML = '<div class="p-2 text-muted small text-center">Type at least 2 characters to search</div>';
+        selectUser(null);
+        return;
+      }
+      searchTimer = setTimeout(async () => {
+        inviteSearchResults.innerHTML = '<div class="p-2 text-muted small text-center">Searching...</div>';
+        const response = await fetch(`/groups/api/students/search/?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        const users = data.users || [];
+        if (!users.length) {
+          inviteSearchResults.innerHTML = '<div class="p-2 text-muted small text-center">No matching students found</div>';
+          selectUser(null);
+          return;
+        }
+        inviteSearchResults.innerHTML = '';
+        users.forEach((user) => {
+          const row = document.createElement('div');
+          row.className = 'search-row';
+          row.dataset.userId = user.id;
+          row.innerHTML = `<div class="fw-medium">${user.name}</div><div class="text-muted small">${user.email}</div>`;
+          row.addEventListener('click', () => {
+            inviteSearchResults.querySelectorAll('.search-row').forEach((item) => item.classList.remove('selected'));
+            row.classList.add('selected');
+            selectUser(user.id);
+          });
+          inviteSearchResults.appendChild(row);
+        });
+      }, 300);
+    });
+  })();
+</script>
+{% endblock %}

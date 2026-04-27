@@ -1,4 +1,5 @@
 import json
+import re
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -23,6 +24,7 @@ from accounts.public_profile import (
     toggle_public_profile_favorite,
     try_resolve_public_profile,
 )
+from groups.models import Group
 
 from .forms import (
     StudentCreateProfileForm,
@@ -38,6 +40,17 @@ from .models import (
     StudentCompatibilitySurvey,
     StudentProfile,
 )
+
+GROUP_INVITE_PREVIEW_PATTERN = re.compile(r'^\[\[GROUP_INVITE:\d+\]\]\s*', re.IGNORECASE)
+
+
+def _clean_chat_preview_text(content):
+    if not content:
+        return ''
+    cleaned = GROUP_INVITE_PREVIEW_PATTERN.sub('', content)
+    cleaned = re.sub(r'<[^>]*>', '', cleaned)
+    cleaned = re.sub(r'\s*Accept invite\s*$', '', cleaned, flags=re.IGNORECASE)
+    return cleaned.strip()
 
 
 class StudentProfileRequiredMixin:
@@ -84,6 +97,13 @@ class StudentDashboardView(StudentProfileRequiredMixin, RoleRequiredMixin, Templ
         context['favorite_listing_ids'] = set(
             ListingFavorite.objects.filter(user=user).values_list('listing_id', flat=True)
         )
+        context["dashboard_groups"] = (
+            Group.objects
+            .filter(memberships__user=user)
+            .select_related("owner")
+            .prefetch_related("memberships")
+            .order_by("name")[:5]
+        )
         # Recent chat previews for dashboard Chat section.
         conversations = (
             Conversation.objects
@@ -101,7 +121,7 @@ class StudentDashboardView(StudentProfileRequiredMixin, RoleRequiredMixin, Templ
                 {
                     "id": conv.id,
                     "other_name": other.get_full_name() or other.username,
-                    "last_snippet": last_msg.content[:80],
+                    "last_snippet": _clean_chat_preview_text(last_msg.content)[:80],
                     "timestamp": last_msg.created_at,
                 }
             )
@@ -203,6 +223,13 @@ class StudentMessagesView(StudentProfileRequiredMixin, RoleRequiredMixin, Templa
         context = super().get_context_data(**kwargs)
         context['user'] = self.request.user
         return context
+
+
+class StudentGroupsRedirectView(StudentProfileRequiredMixin, RoleRequiredMixin, View):
+    required_role = 'student'
+
+    def get(self, request, *args, **kwargs):
+        return redirect('groups:index')
 
 
 class StudentPlaceholderView(RoleRequiredMixin, TemplateView):

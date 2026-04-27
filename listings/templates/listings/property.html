@@ -3,33 +3,143 @@
 
 {% block title %}{{ listing.address }} — Perch{% endblock %}
 
+{% block extra_head %}
+<style>
+  .listing-action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+  }
+  .listing-action-bar__start {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .listing-top-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+  }
+  .listing-top-bar__end {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-left: auto;
+  }
+  .listing-save-group-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 1 1 220px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .listing-save-group-form .form-select {
+    flex: 1 1 8rem;
+    min-width: 7rem;
+    width: auto;
+    max-width: none;
+    border-radius: 0.45rem;
+    background-color: transparent;
+  }
+  .listing-action-pill {
+    border-radius: 999px;
+  }
+  @media (max-width: 576px) {
+    .listing-action-bar__end {
+      margin-left: 0;
+      width: 100%;
+      justify-content: flex-end;
+    }
+    .listing-save-group-form {
+      flex: 1 1 100%;
+      width: 100%;
+      border-radius: 0.75rem;
+      padding: 0.55rem;
+    }
+    .listing-save-group-form .form-select,
+    .listing-save-group-form .btn {
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid mx-auto" style="max-width: 700px;">
 
-  <!-- Page header -->
-  <div class="mb-4">
-    <h2 class="fw-bold mb-0">{{ listing.address }}</h2>
-    <div class="mt-2 d-flex flex-wrap gap-2">
-      {% if user.is_authenticated %}
-      <form method="post" action="{% url 'student:toggle_listing_favorite' listing.pk %}">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-        <button type="submit" class="btn btn-sm {% if is_favorited %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill">
-          {% if is_favorited %}
-            <i class="bi bi-heart-fill me-1"></i>Favorited
-          {% else %}
-            <i class="bi bi-heart me-1"></i>Favorite
-          {% endif %}
-        </button>
-      </form>
-      {% endif %}
+  <div class="listing-top-bar mb-3">
+    {% if account_user_type == 'student' %}
+    <div class="listing-top-bar__start">
+      <a href="{{ back_to_listings_url }}" class="btn btn-sm btn-outline-secondary rounded-pill">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </a>
+    </div>
+    {% endif %}
+    <div class="listing-top-bar__end">
       {% if listing.verified %}
-      <span class="badge text-bg-success">Approved listing</span>
+      <span class="badge text-bg-success px-3 py-2 listing-action-pill">Approved listing</span>
       {% endif %}
-      <a class="btn btn-sm btn-outline-danger rounded-pill" href="{% url 'moderation:report_object' 'listings' 'listing' listing.pk %}?next={{ request.path }}">
+      <a class="btn btn-sm btn-outline-danger listing-action-pill" href="{% url 'moderation:report_object' 'listings' 'listing' listing.pk %}?next={{ request.path }}">
         <i class="bi bi-flag me-1"></i>Report listing
       </a>
     </div>
+  </div>
+
+  <!-- Page header -->
+  <div class="mb-4">
+    <h2 class="fw-bold mb-1">{{ listing.address }}</h2>
+    {% if user.is_authenticated or account_user_type == 'student' and user_member_groups %}
+    <div class="listing-action-bar mt-3">
+      <div class="listing-action-bar__start">
+        {% if user.is_authenticated %}
+        <form method="post" action="{% url 'student:toggle_listing_favorite' listing.pk %}" class="flex-shrink-0">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit" class="btn btn-sm {% if is_favorited %}btn-danger{% else %}btn-outline-danger{% endif %} listing-action-pill">
+            {% if is_favorited %}
+              <i class="bi bi-heart-fill me-1"></i>Favorited
+            {% else %}
+              <i class="bi bi-heart me-1"></i>Favorite
+            {% endif %}
+          </button>
+        </form>
+        {% endif %}
+        {% if account_user_type == 'student' and user_member_groups %}
+        <form method="post" action="{% url 'groups:save_listing' %}" class="listing-save-group-form">
+          {% csrf_token %}
+          <input type="hidden" name="listing_id" value="{{ listing.id }}">
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <input type="hidden" name="back_to_listings_url" value="{{ back_to_listings_url }}">
+          <select name="group_id" class="form-select form-select-sm" required>
+            <option value="">Group</option>
+            {% for group in user_member_groups %}
+              <option value="{{ group.id }}">{{ group.name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-sm btn-primary flex-shrink-0" formaction="{% url 'groups:save_listing' %}">
+            <i class="bi bi-bookmark-plus me-1"></i>Save to Group
+          </button>
+          <button type="submit" class="btn btn-sm btn-outline-danger flex-shrink-0" formaction="{% url 'groups:remove_listing' %}">
+            <i class="bi bi-bookmark-x me-1"></i>Remove from Group
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
   </div>
 
   <!-- Image Carousel -->

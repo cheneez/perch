@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'moderation',
     'notifications',
     'chat',
+    'groups',
 ]
 
 MIDDLEWARE = [
