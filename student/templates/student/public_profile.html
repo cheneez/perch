@@ -31,10 +31,12 @@
       </a>
     </div>
     <div class="col-md-4">
-      <button type="button" class="card profile-feature-card h-100 border rounded-3 p-4 text-center text-muted w-100 bg-light" disabled title="Coming soon">
-        <i class="bi bi-flag fs-2 d-block mb-2"></i>
-        <span class="fw-bold">Report</span>
-      </button>
+      <a class="text-decoration-none d-block h-100" href="{% url 'moderation:report_object' 'student' 'studentprofile' p.pk %}?next={{ request.path }}">
+        <div class="card profile-feature-card h-100 border rounded-3 p-4 text-center text-dark">
+          <i class="bi bi-flag fs-2 d-block mb-2"></i>
+          <span class="fw-bold">Report</span>
+        </div>
+      </a>
     </div>
   </div>
 </div>
