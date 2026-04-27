@@ -22,7 +22,6 @@ class Listing(models.Model):
     class LeaseType(models.TextChoices):
         FULL = "full", "Full Lease"
         SUBLEASE = "sublease", "Sublease"
-        SHORT_TERM = "short_term", "Short Term"
     class Status(models.TextChoices):
         AVAILABLE = "available", "Available"
         PENDING = "pending", "Pending"

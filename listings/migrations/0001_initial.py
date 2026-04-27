@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
                 ('stairs', models.BooleanField(default=False)),
                 ('shared_space', models.BooleanField(default=False)),
                 ('room_type', models.CharField(choices=[('room', 'Room'), ('whole_apartment', 'Whole Apartment')], max_length=20)),
-                ('lease_type', models.CharField(choices=[('full', 'Full Lease'), ('sublease', 'Sublease'), ('short_term', 'Short Term')], max_length=20)),
+                ('lease_type', models.CharField(choices=[('full', 'Full Lease'), ('sublease', 'Sublease')], max_length=20)),
                 ('lease_start', models.DateField(blank=True, null=True)),
                 ('lease_end', models.DateField(blank=True, null=True)),
                 ('status', models.CharField(choices=[('available', 'Available'), ('pending', 'Pending'), ('rented', 'Rented')], default='available', max_length=20)),
