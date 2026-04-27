@@ -10,6 +10,7 @@ from listings.models import Listing
 from student.models import StudentProfile
 
 from .forms import ReportForm
+from notifications.models import Notification
 
 
 REPORTABLE_MODELS = {
@@ -43,13 +44,24 @@ def create_report(request, app_label, model, object_id):
             report.content_type = ContentType.objects.get_for_model(target, for_concrete_model=False)
             report.object_id = target.pk
             report.save()
-            messages.success(request, 'Your report has been submitted for review.')
+
+            safe_next = ''
             if next_url and url_has_allowed_host_and_scheme(
                 next_url,
                 allowed_hosts={request.get_host()},
                 require_https=request.is_secure(),
             ):
-                return redirect(next_url)
+                safe_next = next_url
+            Notification.objects.create(
+                recipient=request.user,
+                kind=Notification.Kind.REPORT_RECEIVED,
+                title='Report received',
+                body='Thanks — we received your report. Admins will review it soon.',
+                link_url=safe_next,
+            )
+            messages.success(request, 'Your report has been submitted for review.')
+            if safe_next:
+                return redirect(safe_next)
             return redirect('landing')
     else:
         form = ReportForm(initial={'next': next_url})
