@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db.models import Max
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views import View
@@ -6,6 +7,8 @@ from django.views.generic import FormView, TemplateView
 
 from accounts.mixins import RoleRequiredMixin
 from accounts.models import Favorite, Profile
+from chat.models import Conversation
+from listings.models import Listing
 from accounts.public_profile import (
     toggle_public_profile_favorite,
     try_resolve_public_profile,
@@ -34,7 +37,45 @@ class LessorDashboardView(LessorProfileRequiredMixin, RoleRequiredMixin, Templat
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['user'] = self.request.user
+        user = self.request.user
+        context['user'] = user
+        context['my_listings'] = (
+            Listing.objects.filter(
+                owner=user,
+                status=Listing.Status.AVAILABLE,
+                moderation_status=Listing.ModerationStatus.APPROVED,
+            )
+            .prefetch_related('images')
+            .order_by('-created_at')[:12]
+        )
+        context["pending_listings"] = (
+            Listing.objects.filter(
+                owner=user,
+                moderation_status=Listing.ModerationStatus.PENDING,
+            )
+            .order_by('-created_at')[:5]
+        )
+        conversations = (
+            Conversation.objects
+            .filter(participants=user)
+            .annotate(last_message_time=Max('messages__created_at'))
+            .order_by('-updated_at')[:5]
+        )
+        preview_items = []
+        for conv in conversations:
+            other = conv.participants.exclude(id=user.id).first()
+            last_msg = conv.messages.order_by('-created_at').first()
+            if not other or not last_msg:
+                continue
+            preview_items.append(
+                {
+                    "id": conv.id,
+                    "other_name": other.get_full_name() or other.username,
+                    "last_snippet": last_msg.content[:80],
+                    "timestamp": last_msg.created_at,
+                }
+            )
+        context["recent_conversations"] = preview_items
         return context
 
 
