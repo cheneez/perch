@@ -118,11 +118,12 @@ class FindHousingView(View):
             .prefetch_related('images')
         )
 
-        min_price = request.GET.get('min_price', '').strip()
-        max_price = request.GET.get('max_price', '').strip()
-        bedrooms  = request.GET.get('bedrooms', '').strip()
-        room_type = request.GET.get('room_type', '').strip()
-        radius    = request.GET.get('radius', '1').strip()
+        min_price  = request.GET.get('min_price', '').strip()
+        max_price  = request.GET.get('max_price', '').strip()
+        bedrooms   = request.GET.get('bedrooms', '').strip()
+        room_type  = request.GET.get('room_type', '').strip()
+        lease_type = request.GET.get('lease_type', '').strip()
+        radius     = request.GET.get('radius', '1').strip()
 
         try:
             radius_float = float(radius)
@@ -140,6 +141,8 @@ class FindHousingView(View):
             qs = qs.filter(bedrooms=bedrooms)
         if room_type:
             qs = qs.filter(room_type=room_type)
+        if lease_type:
+            qs = qs.filter(lease_type=lease_type)
 
         qs = qs.filter(distance_miles__lte=radius_float).order_by('-created_at')
 
