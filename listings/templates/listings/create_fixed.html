@@ -11,8 +11,13 @@
 <div class="container-fluid">
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
     <div>
+      {% if is_student_sublease %}
+      <h2 class="mb-1">Create a Sublease Listing</h2>
+      <p class="text-muted small mb-0">List your place for sublease while you're away. Your listing will be reviewed before going live.</p>
+      {% else %}
       <h2 class="mb-1">Create a Listing</h2>
       <p class="text-muted small mb-0">Fill out the details below to create a new listing.</p>
+      {% endif %}
     </div>
     <div class="text-muted small">
       {% now "l, F j, Y" %}

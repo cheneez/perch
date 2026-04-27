@@ -39,6 +39,7 @@
     <label for="{{ form.price_monthly.id_for_label }}" class="form-label">Monthly Price ($)</label>
     {{ form.price_monthly }}
   </div>
+  {% if not is_student_sublease %}
   <div class="col-md-4">
     <label for="{{ form.security_deposit.id_for_label }}" class="form-label">Security Deposit ($)</label>
     {{ form.security_deposit }}
@@ -51,6 +52,7 @@
     <label for="{{ form.application_fee.id_for_label }}" class="form-label">Application Fee ($)</label>
     {{ form.application_fee }}
   </div>
+  {% endif %}
   <div class="col-md-4">
     <label for="{{ form.estimated_utilities_cost.id_for_label }}" class="form-label">Est. Utilities / Month ($)</label>
     {{ form.estimated_utilities_cost }}
@@ -71,10 +73,12 @@
     <label for="{{ form.room_type.id_for_label }}" class="form-label">Room Type</label>
     {{ form.room_type }}
   </div>
+  {% if not is_student_sublease %}
   <div class="col-md-6">
     <label for="{{ form.lease_type.id_for_label }}" class="form-label">Lease Type</label>
     {{ form.lease_type }}
   </div>
+  {% endif %}
   <div class="col-md-6">
     <label for="{{ form.lease_start.id_for_label }}" class="form-label">Lease Start</label>
     {{ form.lease_start }}

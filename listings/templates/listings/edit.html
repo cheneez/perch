@@ -10,7 +10,11 @@
 <div class="container-fluid">
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
     <div>
+      {% if is_student_sublease %}
+      <h2 class="mb-1">Edit Sublease Listing</h2>
+      {% else %}
       <h2 class="mb-1">Edit Listing</h2>
+      {% endif %}
       <p class="text-muted small mb-0">{{ listing.title }} - {{ listing.address }}</p>
     </div>
   </div>
