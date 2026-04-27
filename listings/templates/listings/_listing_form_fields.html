@@ -9,6 +9,9 @@
     {{ form.address }}
     <input type="hidden" name="_lat" id="id_place_lat" value="{% if form.instance.pk and form.instance.latitude is not None %}{{ form.instance.latitude }}{% endif %}">
     <input type="hidden" name="_lng" id="id_place_lng" value="{% if form.instance.pk and form.instance.longitude is not None %}{{ form.instance.longitude }}{% endif %}">
+    <div id="address-validation-message" class="invalid-feedback d-none"></div>
+    <div id="address-suggestions" class="list-group mt-1" style="display:none;"></div>
+    <div class="form-text text-muted">Start typing and choose a suggested address.</div>
   </div>
   <div class="col-md-3">
     <label for="{{ form.bedrooms.id_for_label }}" class="form-label">Bedrooms</label>

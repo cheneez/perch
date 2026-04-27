@@ -1,7 +1,28 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.contrib.auth.models import User
+from django.contrib.admin.sites import NotRegistered
 from django.utils import timezone
+from django.contrib.admin.sites import NotRegistered
+from django.contrib.auth.models import User
 
 from .models import Favorite, Profile
+
+
+try:
+    admin.site.unregister(User)
+except NotRegistered:
+    pass
+
+
+class FavoriteInline(admin.TabularInline):
+    model = Favorite
+    fk_name = 'user'
+    fields = ('favorited_user', 'created_at')
+    readonly_fields = ('created_at',)
+    extra = 0
+    ordering = ('-created_at',)
+    autocomplete_fields = ('favorited_user',)
 
 
 @admin.register(Favorite)
@@ -12,6 +33,8 @@ class FavoriteAdmin(admin.ModelAdmin):
         'user__username',
         'favorited_user__username',
     )
+    ordering = ('user__username', '-created_at')
+    autocomplete_fields = ('user', 'favorited_user')
 
 
 @admin.register(Profile)
@@ -72,3 +95,14 @@ class ProfileAdmin(admin.ModelAdmin):
             status_updated_at=timezone.now(),
             status_updated_by=request.user,
         )
+
+
+class UserAdmin(DjangoUserAdmin):
+    inlines = tuple(DjangoUserAdmin.inlines or ()) + (FavoriteInline,)
+
+
+try:
+    admin.site.unregister(User)
+except NotRegistered:
+    pass
+admin.site.register(User, UserAdmin)

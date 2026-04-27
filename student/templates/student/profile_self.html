@@ -69,10 +69,13 @@
 
   <div class="row g-3 mt-1">
     <div class="col-md-4">
-      <a href="{% url 'student:roommates' %}" class="text-decoration-none">
+      <a href="{% if has_completed_survey %}{% url 'student:roommates' %}{% else %}{% url 'student:compatibility_survey' %}{% endif %}" class="text-decoration-none">
         <div class="card profile-feature-card h-100 border rounded-3 p-4 text-center text-dark">
           <i class="bi bi-people fs-2 d-block mb-2"></i>
           <span class="fw-bold">Find Roommates</span>
+          {% if not has_completed_survey %}
+          <small class="text-muted d-block mt-1">Complete survey first</small>
+          {% endif %}
         </div>
       </a>
     </div>

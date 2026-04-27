@@ -40,10 +40,6 @@
             {{ form.bio }}
             <div class="form-text"><span id="bio-count">0</span> / 400</div>
           </div>
-          <div class="mb-2"><label class="form-label">Fun facts</label></div>
-          <div class="mb-2">{{ form.fun_fact_1 }}</div>
-          <div class="mb-2">{{ form.fun_fact_2 }}</div>
-          <div class="mb-0">{{ form.fun_fact_3 }}</div>
         </div>
       </div>
 
@@ -167,8 +163,7 @@
   function render() {
     var displayName = val('display_name');
     var bio = val('bio');
-    var f1 = val('fun_fact_1'), f2 = val('fun_fact_2'), f3 = val('fun_fact_3');
-    var about = displayName || bio || f1 || f2 || f3;
+    var about = displayName || bio;
 
     var tags = vals('hobby_tags');
     var customRaw = val('hobby_custom');
@@ -220,11 +215,6 @@
       html += '<div class="mb-3"><strong>About</strong>';
       if (displayName) html += '<p class="mb-1 fw-semibold">' + escapeHtml(displayName) + '</p>';
       if (bio) html += '<p class="mb-1">' + escapeHtml(bio).replace(/\n/g, '<br>') + '</p>';
-      if (f1 || f2 || f3) {
-        html += '<ul class="list-unstyled mb-0">';
-        [f1, f2, f3].forEach(function(t) { if (t) html += '<li class="small p-1 mb-1 bg-light rounded">' + escapeHtml(t) + '</li>'; });
-        html += '</ul>';
-      }
       html += '</div>';
     }
 

@@ -7,10 +7,11 @@ app_name = 'student'
 urlpatterns = [
     path('create-profile/', views.StudentCreateProfileView.as_view(), name='create_profile'),
     path('dashboard/', views.StudentDashboardView.as_view(), name='dashboard'),
-    path('messages/', views.StudentPlaceholderView.as_view(), {'page_title': 'Messages'}, name='messages'),
+    path('messages/', views.StudentMessagesView.as_view(), name='messages'),
     path('groups/', views.StudentPlaceholderView.as_view(), {'page_title': 'Groups'}, name='groups'),
-    path('roommates/', views.StudentPlaceholderView.as_view(), {'page_title': 'Roommates'}, name='roommates'),
+    path('roommates/', views.FindRoommatesView.as_view(), name='roommates'),
     path('find-housing/', views.FindHousingView.as_view(), name='find_housing'),
+    path('find-housing/<int:listing_id>/favorite/', views.toggle_listing_favorite, name='toggle_listing_favorite'),
     path('profile/', views.StudentProfileSelfView.as_view(), name='profile'),
     path('profile/<int:user_id>/', views.StudentProfileOtherView.as_view(), name='public_profile'),
     path(

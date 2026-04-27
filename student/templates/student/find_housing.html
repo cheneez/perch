@@ -68,32 +68,44 @@
 
       {% if listings %}
         {% for listing in listings %}
-          <a href="{% url 'listings:property' listing.pk %}"
-             class="fh-card" id="fh-card-{{ listing.pk }}" data-pk="{{ listing.pk }}">
-            <div class="fh-card-img-wrap">
-              {% with img=listing.images.first %}
-                {% if img and img.image %}
-                  <img src="{{ img.image.url }}" class="fh-card-img" alt="{{ listing.title }}">
-                {% elif img and img.image_url %}
-                  <img src="{{ img.image_url }}" class="fh-card-img" alt="{{ listing.title }}">
+          <div class="fh-card-shell" id="fh-card-{{ listing.pk }}" data-pk="{{ listing.pk }}">
+            <form method="post" action="{% url 'student:toggle_listing_favorite' listing.pk %}" class="fh-favorite-form">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" class="fh-favorite-btn" aria-label="Toggle favorite">
+                {% if listing.pk in favorite_listing_ids %}
+                  <i class="bi bi-heart-fill"></i>
                 {% else %}
-                  <div class="fh-card-img fh-card-img-placeholder"><i class="bi bi-image"></i></div>
+                  <i class="bi bi-heart"></i>
                 {% endif %}
-              {% endwith %}
-              <span class="fh-price-badge">${{ listing.price_monthly|floatformat:0 }}/mo</span>
-            </div>
-            <div class="fh-card-body">
-              <p class="fh-card-title">{{ listing.title }}</p>
-              <p class="fh-card-address">{{ listing.address }}</p>
-              <div class="fh-card-meta">
-                <span><i class="bi bi-door-open"></i> {{ listing.bedrooms }} bd</span>
-                <span><i class="bi bi-droplet"></i> {{ listing.bathrooms }} ba</span>
-                {% if listing.distance_miles %}
-                  <span><i class="bi bi-geo"></i> {{ listing.distance_miles }} mi</span>
-                {% endif %}
+              </button>
+            </form>
+            <a href="{% url 'listings:property' listing.pk %}" class="fh-card">
+              <div class="fh-card-img-wrap">
+                {% with img=listing.images.first %}
+                  {% if img and img.image %}
+                    <img src="{{ img.image.url }}" class="fh-card-img" alt="{{ listing.title }}">
+                  {% elif img and img.image_url %}
+                    <img src="{{ img.image_url }}" class="fh-card-img" alt="{{ listing.title }}">
+                  {% else %}
+                    <div class="fh-card-img fh-card-img-placeholder"><i class="bi bi-image"></i></div>
+                  {% endif %}
+                {% endwith %}
+                <span class="fh-price-badge">${{ listing.price_monthly|floatformat:0 }}/mo</span>
               </div>
-            </div>
-          </a>
+              <div class="fh-card-body">
+                <p class="fh-card-title">{{ listing.title }}</p>
+                <p class="fh-card-address">{{ listing.address }}</p>
+                <div class="fh-card-meta">
+                  <span><i class="bi bi-door-open"></i> {{ listing.bedrooms }} bd</span>
+                  <span><i class="bi bi-droplet"></i> {{ listing.bathrooms }} ba</span>
+                  {% if listing.distance_miles %}
+                    <span><i class="bi bi-geo"></i> {{ listing.distance_miles }} mi</span>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          </div>
         {% endfor %}
       {% else %}
         <div class="fh-empty">
@@ -187,9 +199,11 @@ function initFHMap() {
   }
 
   // Card click: pan to marker, open info window, then navigate
-  document.querySelectorAll('.fh-card[data-pk]').forEach(function (card) {
+  document.querySelectorAll('.fh-card-shell[data-pk]').forEach(function (cardShell) {
+    var card = cardShell.querySelector('.fh-card');
+    if (!card) return;
     card.addEventListener('click', function (e) {
-      var pk = card.dataset.pk;
+      var pk = cardShell.dataset.pk;
       if (markers[pk]) {
         e.preventDefault();
         map.panTo(markers[pk].getPosition());
@@ -202,10 +216,8 @@ function initFHMap() {
           '</div>'
         );
         infoWindow.open(map, markers[pk]);
-        document.querySelectorAll('.fh-card').forEach(function (c) {
-          c.classList.remove('fh-card-active');
-        });
-        card.classList.add('fh-card-active');
+        document.querySelectorAll('.fh-card-shell').forEach(function (c) { c.classList.remove('fh-card-active'); });
+        cardShell.classList.add('fh-card-active');
         setTimeout(function () { window.location.href = card.href; }, 600);
       }
     });
@@ -329,6 +341,10 @@ function initFHMap() {
 }
 
 /* ── Cards ── */
+.fh-card-shell {
+  position: relative;
+}
+
 .fh-card {
   display: block;
   background: #fff;
@@ -341,11 +357,31 @@ function initFHMap() {
   transition: box-shadow 0.18s, transform 0.18s;
   border: 2px solid transparent;
 }
+
+.fh-favorite-form {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+}
+
+.fh-favorite-btn {
+  border: 0;
+  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #dc3545;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.2);
+}
 .fh-card:hover {
   box-shadow: 0 4px 14px rgba(0,0,0,0.13);
   transform: translateY(-1px);
 }
-.fh-card-active {
+.fh-card-shell.fh-card-active .fh-card {
   border-color: #0f1f4b;
 }
 

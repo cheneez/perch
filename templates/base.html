@@ -16,12 +16,12 @@
   <nav class="navbar navbar-expand navbar-dark fixed-top top-navbar">
     <div class="container-fluid">
       <a class="navbar-brand brand-perch" href="#">Perch</a>
-      <div class="navbar-nav flex-grow-1 justify-content-center mx-3">
-        <div class="input-group navbar-search" style="max-width: 320px;">
+      <form class="navbar-nav flex-grow-1 justify-content-center mx-3" method="get" action="{% url 'user_search' %}" role="search">
+        <div class="input-group navbar-search" style="max-width: 420px;">
           <span class="input-group-text navbar-search-icon"><i class="bi bi-search"></i></span>
-          <input type="search" class="form-control navbar-search-input" placeholder="Search..." aria-label="Search">
+          <input type="search" name="q" value="{{ request.GET.q|default:'' }}" class="form-control navbar-search-input" placeholder="Search people by name…" aria-label="Search users" minlength="2" autocomplete="off">
         </div>
-      </div>
+      </form>
       <div class="navbar-nav align-items-center flex-row gap-2">
         <a class="nav-link text-white px-2" href="#" aria-label="Notifications">
           <i class="bi bi-bell fs-5"></i>
@@ -56,15 +56,15 @@
       <i class="bi bi-chevron-double-left" id="sidebarToggleIcon"></i>
     </button>
     <nav class="sidebar-nav mt-2">
-      {% with ns=request.resolver_match.namespace|default:"student" url_name=request.resolver_match.url_name %}
-      {% if ns == 'student' %}
+      {% with url_name=request.resolver_match.url_name %}
+      {% if account_user_type == 'student' %}
       <a class="sidebar-link {% if url_name == 'dashboard' %}active{% endif %}" href="{% url 'student:dashboard' %}"><i class="bi bi-house-door"></i><span class="sidebar-label">Overview</span></a>
       <a class="sidebar-link {% if url_name == 'messages' %}active{% endif %}" href="{% url 'student:messages' %}"><i class="bi bi-chat-dots"></i><span class="sidebar-label">Messages</span></a>
       <a class="sidebar-link {% if url_name == 'groups' %}active{% endif %}" href="{% url 'student:groups' %}"><i class="bi bi-people"></i><span class="sidebar-label">Groups</span></a>
       <a class="sidebar-link {% if url_name == 'roommates' %}active{% endif %}" href="{% url 'student:roommates' %}"><i class="bi bi-person-badge"></i><span class="sidebar-label">Roommates</span></a>
       <a class="sidebar-link {% if url_name == 'find_housing' %}active{% endif %}" href="{% url 'student:find_housing' %}"><i class="bi bi-search"></i><span class="sidebar-label">Find Housing</span></a>
       <a class="sidebar-link {% if url_name == 'profile' %}active{% endif %}" href="{% url 'student:profile' %}"><i class="bi bi-person-circle"></i><span class="sidebar-label">My profile</span></a>
-      {% else %}
+      {% elif account_user_type == 'realtor' or account_user_type == 'lessor' %}
       <a class="sidebar-link {% if url_name == 'dashboard' %}active{% endif %}" href="{% url 'lessor:dashboard' %}"><i class="bi bi-house-door"></i><span class="sidebar-label">Overview</span></a>
       <a class="sidebar-link {% if url_name == 'messages' %}active{% endif %}" href="{% url 'lessor:messages' %}"><i class="bi bi-chat-dots"></i><span class="sidebar-label">Messages</span></a>
       <a class="sidebar-link {% if url_name == 'create_listing' or url_name == 'listings-create' %}active{% endif %}" href="{% url 'listings:listings-create' %}"><i class="bi bi-plus-square"></i><span class="sidebar-label">Create listing</span></a>

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Search users — Perch{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4" style="max-width: 720px;">
+  <h1 class="h5 fw-bold text-dark mb-3">Search users</h1>
+  <p class="text-muted small mb-4">
+    Search by first name, last name, or username. Use the navbar search on any page — results include both students and lessors.
+  </p>
+
+  {% if search_too_short %}
+  <div class="alert alert-warning py-2 small">Enter at least 2 characters to search.</div>
+  {% endif %}
+
+  {% if q and not search_too_short and not results %}
+  <p class="text-muted">No users matched “{{ q }}”.</p>
+  {% endif %}
+
+  {% if results %}
+  <ul class="list-group list-group-flush border rounded shadow-sm">
+    {% for row in results %}
+    <li class="list-group-item d-flex align-items-center gap-3 py-3">
+      {% if row.p.profile_picture %}
+      <img src="{{ row.p.profile_picture.url }}" alt="" class="rounded-circle" width="44" height="44" style="object-fit: cover;">
+      {% else %}
+      <div class="rounded-circle bg-secondary-subtle d-inline-flex align-items-center justify-content-center fw-semibold text-secondary" style="width: 44px; height: 44px; font-size: 0.9rem;">
+        {{ row.p.first_name|slice:":1" }}{{ row.p.last_name|slice:":1" }}
+      </div>
+      {% endif %}
+      <div class="flex-grow-1 min-w-0">
+        <div class="fw-semibold text-truncate">{{ row.p.first_name }} {{ row.p.last_name }}</div>
+        <div class="small text-muted">@{{ row.p.username }}</div>
+      </div>
+      <div class="text-nowrap">
+        {% if row.kind == 'student' %}
+          <span class="badge rounded-pill text-bg-primary">S</span>
+        {% else %}
+          <span class="badge rounded-pill text-bg-success">L</span>
+        {% endif %}
+      </div>
+      <div>
+        <a class="btn btn-sm btn-outline-primary" href="{% url viewer_profile_namespace|add:':public_profile' user_id=row.p.user_id %}">View profile</a>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% endblock %}

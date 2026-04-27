@@ -26,6 +26,18 @@ This creates:
 
 Run it once after cloning. Re-running is safe — it skips creation if the user/listing already exist.
 
+For a fuller local dataset with seeded admin, students, lessors, surveys, and listings:
+
+```bash
+python manage.py populate_test_data
+```
+
+This creates:
+- **Admin:** `admin_seed` / `perch1234`
+- **Students:** `student_seed_1` ... `student_seed_5` / `testpass123`
+- **Lessors:** `lessor_seed_1` ... `lessor_seed_3` / `testpass123`
+- **Listings:** approved, pending, rejected, and rented examples for moderation and browse testing
+
 ## Key URLs (local dev)
 
 | Page | URL |

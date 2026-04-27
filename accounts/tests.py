@@ -8,6 +8,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from lessor.models import LessorProfile
+from student.models import StudentProfile
 
 from .models import Profile, get_or_create_account_profile
 from .public_profile import (
@@ -287,3 +288,87 @@ class AdminAccountTypeTests(TestCase):
         self.client.force_login(staff)
         response = self.client.get(reverse('dashboard'))
         self.assertRedirects(response, reverse('admin:index'), fetch_redirect_response=False)
+
+
+@override_settings(
+    ALLOWED_HOSTS=['localhost', '127.0.0.1', 'testserver'],
+)
+class UserSearchTests(TestCase):
+    def setUp(self):
+        self.alice = User.objects.create_user('alice', 'alice@bc.edu', 'pass12345')
+        self.bob = User.objects.create_user('boby', 'bob@bc.edu', 'pass12345')
+        self.less = User.objects.create_user('test4', 'test4@gmail.com', 'pass12345')
+        Profile.objects.create(
+            user=self.alice,
+            user_type='student',
+            email_verified=True,
+        )
+        Profile.objects.create(
+            user=self.bob,
+            user_type='student',
+            email_verified=True,
+        )
+        Profile.objects.create(
+            user=self.less,
+            user_type='realtor',
+            email_verified=True,
+        )
+        StudentProfile.objects.create(
+            user=self.alice,
+            username='alice',
+            first_name='Alice',
+            last_name='Wonder',
+            school='Boston College',
+            grade_year='ug_junior',
+            gender_identity='woman',
+        )
+        StudentProfile.objects.create(
+            user=self.bob,
+            username='boby',
+            first_name='Bob',
+            last_name='Builder',
+            school='Boston College',
+            grade_year='ug_junior',
+            gender_identity='man',
+        )
+        LessorProfile.objects.create(
+            user=self.less,
+            username='test4',
+            first_name='Test',
+            last_name='Four',
+            gender_identity='prefer_not',
+            email='test4@gmail.com',
+        )
+
+    def test_user_search_requires_login(self):
+        url = reverse('user_search')
+        response = self.client.get(url, {'q': 'Bob'})
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/auth/login/', response['Location'])
+
+    def test_student_search_finds_by_name(self):
+        self.client.force_login(self.alice)
+        response = self.client.get(reverse('user_search'), {'q': 'Bob'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Bob')
+        self.assertContains(response, 'Builder')
+
+    def test_student_search_finds_lessors_too(self):
+        self.client.force_login(self.alice)
+        response = self.client.get(reverse('user_search'), {'q': 'Four'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '>L<')
+        self.assertContains(response, 'Test')
+        self.assertContains(response, 'Four')
+
+    def test_search_results_show_role_badge(self):
+        self.client.force_login(self.alice)
+        response = self.client.get(reverse('user_search'), {'q': 'Bob'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '>S<')
+
+    def test_one_character_query_shows_hint(self):
+        self.client.force_login(self.alice)
+        response = self.client.get(reverse('user_search'), {'q': 'B'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'at least 2 characters')
