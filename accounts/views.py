@@ -458,3 +458,19 @@ def dashboard_view(request):
     if not LessorProfile.objects.filter(user=request.user).exists():
         return redirect(reverse('lessor:create_profile'))
     return redirect(reverse('lessor:dashboard'))
+
+
+#Development-only shortcut for local load testing. Lets locust authenticate seeded users without interactive OAuth flow.
+
+def dev_login_by_username(request, username):
+    """
+    Development-only shortcut for deterministic local load testing.
+    """
+    if not settings.DEBUG:
+        return redirect('login')
+    user = User.objects.filter(username=username).first()
+    if user is None:
+        messages.error(request, f'No user found for username "{username}".')
+        return redirect('login')
+    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    return redirect('dashboard')

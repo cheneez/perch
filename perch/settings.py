@@ -174,6 +174,7 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'true').lower() == 'true'
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@perch.local')
+LOGIN_URL = '/auth/login/'
 
 # Student roommate compatibility survey.
 # Can be an external URL or an internal path (e.g. "/student/compatibility-survey/").
