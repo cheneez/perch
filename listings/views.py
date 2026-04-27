@@ -8,6 +8,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from chat.models import Conversation, Message
@@ -167,12 +169,44 @@ def delete_listing(request, pk):
     return redirect("listings:listing-detail", pk=pk)
 
 def property_detail(request, pk):
+    from groups.models import Group
+
     listing = get_object_or_404(Listing.objects.accessible_to(request.user), pk=pk)
     is_favorited = False
     user_review = None
+    user_member_groups = []
+    default_back_url = reverse("student:find_housing")
+    back_to_listings_url = default_back_url
+    requested_back_url = (request.GET.get("back") or "").strip()
+    if requested_back_url and url_has_allowed_host_and_scheme(
+        url=requested_back_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        back_to_listings_url = requested_back_url
+
+    referer = request.META.get("HTTP_REFERER", "").strip()
+    if (
+        back_to_listings_url == default_back_url
+        and referer
+        and "/groups/save-listing/" not in referer
+        and "/groups/remove-listing/" not in referer
+        and request.path not in referer
+        and url_has_allowed_host_and_scheme(
+            url=referer,
+            allowed_hosts={request.get_host()},
+            require_https=request.is_secure(),
+        )
+    ):
+        back_to_listings_url = referer
     if request.user.is_authenticated:
         is_favorited = ListingFavorite.objects.filter(user=request.user, listing=listing).exists()
         user_review = ListingReview.objects.filter(user=request.user, listing=listing).first()
+        user_member_groups = list(
+            Group.objects.filter(memberships__user=request.user)
+            .order_by("name")
+            .distinct()
+        )
     return render(
         request,
         'listings/property.html',
@@ -180,6 +214,8 @@ def property_detail(request, pk):
             'listing': listing,
             'is_favorited': is_favorited,
             'user_review': user_review,
+            'back_to_listings_url': back_to_listings_url,
+            'user_member_groups': user_member_groups,
         },
     )
 

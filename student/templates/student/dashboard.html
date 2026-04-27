@@ -64,8 +64,13 @@
           {% endfor %}
         </div>
       {% else %}
-        <div class="placeholder-content">
+        <div class="placeholder-content dashboard-empty-state">
           <span>No favorited listings yet.</span>
+          <div class="mt-2">
+            <a href="{% url 'student:find_housing' %}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-search me-1"></i>Find a Listing
+            </a>
+          </div>
         </div>
       {% endif %}
     </div>
@@ -77,8 +82,41 @@
         <div class="card-header">
           <h5 class="mb-0">Housing Groups</h5>
         </div>
-        <div class="card-body placeholder-content-sm">
-          <span>Content coming soon</span>
+        <div class="card-body">
+          {% if dashboard_groups %}
+            <ul class="list-unstyled mb-0">
+              {% for group in dashboard_groups %}
+                <li class="mb-2">
+                  <a href="{% url 'groups:detail' group.id %}" class="d-flex align-items-start text-decoration-none text-reset">
+                    <div class="me-2 rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
+                         style="width:36px;height:36px;font-size:0.85rem;">
+                      <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                      <div class="d-flex justify-content-between">
+                        <span class="fw-semibold">{{ group.name }}</span>
+                        <span class="text-muted small">
+                          {{ group.memberships.all|length }} member{{ group.memberships.all|length|pluralize }}
+                        </span>
+                      </div>
+                      <p class="text-muted small mb-0">
+                        Owner: {{ group.owner.get_full_name|default:group.owner.username }}
+                      </p>
+                    </div>
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="placeholder-content-sm dashboard-empty-state">
+              <span>No groups yet.</span>
+              <div class="mt-2">
+                <a href="{% url 'groups:index' %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-search me-1"></i>Find a Group
+                </a>
+              </div>
+            </div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -223,5 +261,9 @@
   color: #495057;
 }
 .fh-card-meta i { margin-right: 2px; }
+.dashboard-empty-state {
+  flex-direction: column;
+  text-align: center;
+}
 </style>
 {% endblock %}

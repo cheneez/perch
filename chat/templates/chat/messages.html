@@ -247,10 +247,66 @@
     return text.length > n ? text.slice(0, n) + '…' : text;
   }
 
+  function chatPreviewText(rawContent) {
+    if (!rawContent) return '';
+    return rawContent
+      .replace(/^\[\[GROUP_INVITE:\d+\]\]\s*/i, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/\s*Accept invite\s*$/i, '')
+      .trim();
+  }
+
   function esc(text) {
     const d = document.createElement('div');
     d.textContent = text;
     return d.innerHTML;
+  }
+
+  function isGroupInviteMessage(text) {
+    return typeof text === 'string' && text.startsWith('[[GROUP_INVITE:');
+  }
+
+  function inviteMessageHtml(rawContent, canAccept, inviteStatus) {
+    const match = rawContent.match(/^\[\[GROUP_INVITE:(\d+)\]\]\s*(.*)$/);
+    if (!match) {
+      return `<div class="message-content">${esc(rawContent)}</div>`;
+    }
+    const inviteId = match[1];
+    const inviteTextRaw = match[2] || 'You were invited to a group.';
+    const inviteText = (
+      inviteTextRaw
+        .replace(/<[^>]*>/g, '')
+        .replace(/\s*Accept invite\s*$/i, '')
+        .trim()
+      || 'You were invited to a group.'
+    );
+    let actionHtml = '';
+    if (inviteStatus === 'accepted') {
+      actionHtml = `
+        <button class="btn btn-sm btn-success mt-2" disabled>
+          Accepted
+        </button>`;
+    } else if (inviteStatus === 'declined') {
+      actionHtml = `
+        <button class="btn btn-sm btn-danger mt-2" disabled>
+          Declined
+        </button>`;
+    } else if (canAccept) {
+      actionHtml = `
+        <div class="d-flex gap-2 mt-2">
+          <button class="btn btn-sm btn-outline-success chat-accept-group-invite" data-invite-id="${inviteId}">
+            Accept
+          </button>
+          <button class="btn btn-sm btn-outline-danger chat-decline-group-invite" data-invite-id="${inviteId}">
+            Decline
+          </button>
+        </div>`;
+    }
+    return `
+      <div class="message-content">
+        <div>${esc(inviteText)}</div>
+        ${actionHtml}
+      </div>`;
   }
 
   function getCookie(name) {
@@ -308,6 +364,20 @@
     });
   }
 
+  async function apiAcceptGroupInvite(inviteId) {
+    return fetch(`/groups/api/invites/${inviteId}/accept/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    });
+  }
+
+  async function apiDeclineGroupInvite(inviteId) {
+    return fetch(`/groups/api/invites/${inviteId}/decline/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    });
+  }
+
   // ── Sidebar ───────────────────────────────────────────────
 
   function renderConversationList() {
@@ -328,8 +398,9 @@
       const lm = conv.last_message;
       let preview = 'No messages yet';
       if (lm.content) {
+        const previewContent = chatPreviewText(lm.content);
         const who = lm.sender_id === CURRENT_USER_ID ? 'You' : (isGroup && lm.sender_name ? lm.sender_name.split(' ')[0] : null);
-        preview = (who ? who + ': ' : '') + truncate(lm.content, 40);
+        preview = (who ? who + ': ' : '') + truncate(previewContent, 40);
       }
 
       el.innerHTML = `
@@ -364,10 +435,80 @@
     const senderLabel = (!isMine && activeConvIsGroup && msg.sender_name)
       ? `<div class="message-sender-name">${esc(msg.sender_name)}</div>` : '';
 
+    const content = msg.content || msg.message;
+    const contentHtml = isGroupInviteMessage(content)
+      ? inviteMessageHtml(content, !isMine, msg.invite_status)
+      : `<div class="message-content">${esc(content)}</div>`;
     bubble.innerHTML = `
       ${senderLabel}
-      <div class="message-content">${esc(msg.content || msg.message)}</div>
+      ${contentHtml}
       <div class="message-meta">${msg.timestamp ? esc(formatTime(msg.timestamp)) : ''}</div>`;
+
+    bubble.querySelectorAll('.chat-accept-group-invite').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const originalText = btn.textContent;
+        const actionWrap = btn.closest('.d-flex');
+        const declineBtn = actionWrap ? actionWrap.querySelector('.chat-decline-group-invite') : null;
+        btn.disabled = true;
+        btn.classList.remove('btn-outline-success');
+        btn.classList.add('btn-success');
+        btn.textContent = 'Accepted';
+        if (declineBtn) {
+          declineBtn.classList.add('d-none');
+        }
+
+        const res = await apiAcceptGroupInvite(btn.dataset.inviteId);
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          alert(data.error || 'Could not accept invite.');
+          if (declineBtn) {
+            declineBtn.classList.remove('d-none');
+          }
+          btn.classList.remove('btn-success');
+          btn.classList.add('btn-outline-success');
+          btn.textContent = originalText;
+          btn.disabled = false;
+          return;
+        }
+        await fetchConversations();
+        if (data.conversation_id) {
+          await openConversation(data.conversation_id);
+        }
+      });
+    });
+
+    bubble.querySelectorAll('.chat-decline-group-invite').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const actionWrap = btn.closest('.d-flex');
+        if (!actionWrap) return;
+        const acceptBtn = actionWrap.querySelector('.chat-accept-group-invite');
+        actionWrap.querySelectorAll('button').forEach(actionBtn => {
+          actionBtn.disabled = true;
+        });
+        if (acceptBtn) {
+          acceptBtn.classList.add('d-none');
+        }
+        btn.classList.remove('btn-outline-danger');
+        btn.classList.add('btn-danger');
+        btn.textContent = 'Declined';
+
+        const res = await apiDeclineGroupInvite(btn.dataset.inviteId);
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          alert(data.error || 'Could not decline invite.');
+          if (acceptBtn) {
+            acceptBtn.classList.remove('d-none');
+          }
+          btn.classList.remove('btn-danger');
+          btn.classList.add('btn-outline-danger');
+          btn.textContent = 'Decline';
+          actionWrap.querySelectorAll('button').forEach(actionBtn => {
+            actionBtn.disabled = false;
+          });
+          return;
+        }
+      });
+    });
 
     chatMessages.appendChild(bubble);
   }

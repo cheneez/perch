@@ -500,7 +500,7 @@ class Command(BaseCommand):
                 phone_number=row['phone_number'],
                 instagram=row['instagram'],
                 linkedin=row['linkedin'],
-                verified=row['verified'],
+                is_verified=row['verified'],
                 show_email=True,
                 show_phone=True,
                 show_instagram=True,

@@ -17,6 +17,7 @@ urlpatterns = [
     path("reports/", include("moderation.urls")),
     path("notifications/", include("notifications.urls")),
     path("chat/", include("chat.urls")),
+    path("groups/", include("groups.urls")),
 ]
 
 if settings.DEBUG:
