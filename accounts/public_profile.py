@@ -10,6 +10,7 @@ from django.contrib.auth.models import User
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from accounts.models import Favorite, Profile
 from lessor.models import LessorProfile
@@ -230,6 +231,7 @@ def toggle_public_profile_favorite(request: HttpRequest, user_id: int) -> HttpRe
     app_name = request.resolver_match.app_name
     public_url = reverse(f'{app_name}:public_profile', kwargs={'user_id': user_id})
     self_profile_name = f'{app_name}:profile'
+    next_url = (request.POST.get('next') or '').strip()
 
     if user_id == request.user.id:
         messages.error(request, 'You cannot add yourself to favorites.')
@@ -244,4 +246,10 @@ def toggle_public_profile_favorite(request: HttpRequest, user_id: int) -> HttpRe
     else:
         Favorite.objects.create(user=request.user, favorited_user_id=user_id)
 
+    if next_url and url_has_allowed_host_and_scheme(
+        url=next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(next_url)
     return redirect(public_url)

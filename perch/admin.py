@@ -51,6 +51,22 @@ class PerchAdminSite(AdminSite):
                 'title': 'People & accounts',
                 'items': [
                     {
+                        'label': 'Users',
+                        'admin_url': reverse('admin:auth_user_changelist'),
+                        'add_url': reverse('admin:auth_user_add'),
+                    },
+                    {
+                        'label': 'Profiles',
+                        'admin_url': reverse('admin:accounts_profile_changelist'),
+                        'add_url': reverse('admin:accounts_profile_add'),
+                    },
+                    {
+                        'label': 'Favorites',
+                        'admin_url': reverse('admin:accounts_favorite_changelist'),
+                        'add_url': reverse('admin:accounts_favorite_add'),
+                    },
+                    {
+                        'label': 'Student profiles',
                         'label': 'Student users',
                         'admin_url': reverse('admin:student_studentprofile_changelist'),
                         'add_url': reverse('admin:student_studentprofile_add'),

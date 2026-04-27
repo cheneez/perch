@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from accounts.models import Profile
+from accounts.models import Favorite, Profile
 from student.compatibility import compatibility_percent
 from student.models import StudentCompatibilitySurvey, StudentProfile
 
@@ -116,6 +116,74 @@ class FindRoommatesTests(TestCase):
 
         ids = [item["user_id"] for item in response.context["results"]]
         self.assertEqual(ids, [keep.id])
+
+    def test_roommates_filters_by_gender_identity(self):
+        viewer = self._create_student("viewer", first_name="Jorge", last_name="Mendez")
+        self._create_survey(viewer, graduation_year="2027", major="cs")
+        woman_candidate = self._create_student("woman1", first_name="Alex", last_name="Rivera")
+        woman_candidate.student_profile.gender_identity = "woman"
+        woman_candidate.student_profile.save(update_fields=["gender_identity"])
+        self._create_survey(woman_candidate, graduation_year="2027", major="cs")
+        man_candidate = self._create_student("man1", first_name="Chris", last_name="Stone")
+        man_candidate.student_profile.gender_identity = "man"
+        man_candidate.student_profile.save(update_fields=["gender_identity"])
+        self._create_survey(man_candidate, graduation_year="2027", major="cs")
+
+        self.client.force_login(viewer)
+        response = self.client.get(reverse("student:roommates"), {"gender_identity": "woman"})
+
+        ids = [item["user_id"] for item in response.context["results"]]
+        self.assertEqual(ids, [woman_candidate.id])
+
+    def test_roommates_context_marks_favorited_profiles(self):
+        viewer = self._create_student("viewer", first_name="Jorge", last_name="Mendez")
+        self._create_survey(viewer)
+        keep = self._create_student("keep", first_name="Chris", last_name="Stone")
+        self._create_survey(keep)
+        other = self._create_student("other", first_name="Pat", last_name="Liu")
+        self._create_survey(other)
+        Favorite.objects.create(user=viewer, favorited_user=keep)
+
+        self.client.force_login(viewer)
+        response = self.client.get(reverse("student:roommates"))
+
+        favorite_flags = {
+            item["user_id"]: item["is_favorited"] for item in response.context["results"]
+        }
+        self.assertTrue(favorite_flags[keep.id])
+        self.assertFalse(favorite_flags[other.id])
+
+    def test_roommates_favorites_only_shows_favorited_only(self):
+        viewer = self._create_student("viewer", first_name="Jorge", last_name="Mendez")
+        self._create_survey(viewer)
+        favorite_user = self._create_student("fav", first_name="Fav", last_name="User")
+        self._create_survey(favorite_user)
+        other = self._create_student("other", first_name="Other", last_name="User")
+        self._create_survey(other)
+        Favorite.objects.create(user=viewer, favorited_user=favorite_user)
+
+        self.client.force_login(viewer)
+        response = self.client.get(reverse("student:roommates"), {"favorites_only": "1"})
+
+        ids = [item["user_id"] for item in response.context["results"]]
+        self.assertEqual(ids, [favorite_user.id])
+        self.assertTrue(response.context["favorites_only"])
+
+    def test_public_profile_favorite_toggle_redirects_to_safe_next(self):
+        viewer = self._create_student("viewer", first_name="Jorge", last_name="Mendez")
+        target = self._create_student("target", first_name="Alex", last_name="Rivera")
+
+        self.client.force_login(viewer)
+        next_url = reverse("student:roommates") + "?gender_identity=woman"
+        response = self.client.post(
+            reverse("student:public_profile_favorite", kwargs={"user_id": target.id}),
+            {"next": next_url},
+        )
+
+        self.assertRedirects(response, next_url, fetch_redirect_response=False)
+        self.assertTrue(
+            Favorite.objects.filter(user=viewer, favorited_user=target).exists()
+        )
 
     def test_compatibility_percent_orders_closest_match_first(self):
         viewer = self._create_student("viewer", first_name="Jorge", last_name="Mendez")

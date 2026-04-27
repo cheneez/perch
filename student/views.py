@@ -18,6 +18,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.mixins import RoleRequiredMixin
 from accounts.models import Favorite, Profile
+from accounts.profile_choices import GENDER_CHOICES
 from accounts.public_profile import (
     toggle_public_profile_favorite,
     try_resolve_public_profile,
@@ -412,7 +413,15 @@ class FindRoommatesView(StudentProfileRequiredMixin, RoleRequiredMixin, Template
     required_role = 'student'
     template_name = 'student/find_roommates.html'
 
-    FILTER_FIELDS = ('graduation_year', 'major', 'smoking_habits', 'cleanliness', 'noise_level', 'sleep_schedule')
+    FILTER_FIELDS = (
+        'graduation_year',
+        'major',
+        'gender_identity',
+        'smoking_habits',
+        'cleanliness',
+        'noise_level',
+        'sleep_schedule',
+    )
 
     def dispatch(self, request, *args, **kwargs):
         self.viewer_survey = self.get_completed_survey(request.user)
@@ -424,9 +433,13 @@ class FindRoommatesView(StudentProfileRequiredMixin, RoleRequiredMixin, Template
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         filters = {name: self.request.GET.get(name, '').strip() for name in self.FILTER_FIELDS}
+        favorites_only = self.request.GET.get('favorites_only', '').strip() == '1'
         candidates = self._eligible_candidates(filters)
-        has_filters = any(filters.values())
+        has_filters = any(filters.values()) or favorites_only
         base_pool_count = self._base_candidate_count()
+        favorited_user_ids = set(
+            Favorite.objects.filter(user=self.request.user).values_list('favorited_user_id', flat=True)
+        )
 
         results = []
         for candidate in candidates:
@@ -447,20 +460,51 @@ class FindRoommatesView(StudentProfileRequiredMixin, RoleRequiredMixin, Template
                     'graduation_year': candidate_survey.get_graduation_year_display(),
                     'major': candidate_survey.get_major_display(),
                     'compatibility_score': score,
+                    'is_favorited': candidate.id in favorited_user_ids,
+                    'favorite_toggle_url': reverse(
+                        'student:public_profile_favorite',
+                        kwargs={'user_id': candidate.id},
+                    ),
                 }
             )
         results.sort(key=lambda item: item['compatibility_score'], reverse=True)
+        if favorites_only:
+            results = [r for r in results if r['is_favorited']]
 
+        q = self.request.GET.copy()
+        q['favorites_only'] = '1'
+        favorites_filter_url = reverse('student:roommates') + '?' + q.urlencode()
+        all_roommates_q = self.request.GET.copy()
+        all_roommates_q.pop('favorites_only', None)
+        if all_roommates_q:
+            all_roommates_url = reverse('student:roommates') + '?' + all_roommates_q.urlencode()
+        else:
+            all_roommates_url = reverse('student:roommates')
+
+        empty_no_results = base_pool_count > 0 and len(results) == 0
         ctx.update(
             {
                 'user': self.request.user,
                 'results': results,
                 'filters': filters,
+                'favorites_only': favorites_only,
+                'favorites_filter_url': favorites_filter_url,
+                'all_roommates_url': all_roommates_url,
+                'favorited_count': len(favorited_user_ids),
                 'graduation_year_choices': GRADUATION_YEAR_CHOICES,
                 'major_choices': MAJOR_CHOICES,
+                'gender_choices': GENDER_CHOICES,
                 'empty_no_candidates': base_pool_count == 0,
-                'empty_no_matches': base_pool_count > 0 and len(results) == 0,
+                'empty_no_matches': not favorites_only
+                and empty_no_results,
+                'empty_favorites': favorites_only
+                and empty_no_results
+                and len(favorited_user_ids) == 0,
+                'empty_favorites_no_filter_match': favorites_only
+                and empty_no_results
+                and len(favorited_user_ids) > 0,
                 'has_filters': has_filters,
+                'favorites_next_url': self.request.get_full_path(),
             }
         )
         return ctx
@@ -487,6 +531,11 @@ class FindRoommatesView(StudentProfileRequiredMixin, RoleRequiredMixin, Template
             if filters['graduation_year'] and survey.graduation_year != filters['graduation_year']:
                 continue
             if filters['major'] and survey.major != filters['major']:
+                continue
+            if (
+                filters['gender_identity']
+                and user.student_profile.gender_identity != filters['gender_identity']
+            ):
                 continue
             if filters['smoking_habits'] and survey.smoking_habits != filters['smoking_habits']:
                 continue
