@@ -9,7 +9,6 @@ class PerchAdminSite(AdminSite):
     index_title = 'Moderation Dashboard'
 
     def index(self, request, extra_context=None):
-        from accounts.models import Profile
         from listings.models import Listing
         from moderation.models import Report
 
@@ -46,13 +45,6 @@ class PerchAdminSite(AdminSite):
                 'value': Report.objects.filter(status=Report.Status.OPEN).count(),
                 'link': f"{reverse('admin:moderation_report_changelist')}?status__exact=open",
             },
-            {
-                'label': 'Suspended users',
-                'value': Profile.objects.filter(
-                    account_status=Profile.AccountStatus.SUSPENDED
-                ).count(),
-                'link': f"{reverse('admin:accounts_profile_changelist')}?account_status__exact=suspended",
-            },
         ]
         extra_context['dashboard_quick_access'] = [
             {
@@ -75,11 +67,12 @@ class PerchAdminSite(AdminSite):
                     },
                     {
                         'label': 'Student profiles',
+                        'label': 'Student users',
                         'admin_url': reverse('admin:student_studentprofile_changelist'),
                         'add_url': reverse('admin:student_studentprofile_add'),
                     },
                     {
-                        'label': 'Lessor profiles',
+                        'label': 'Lessor users',
                         'admin_url': reverse('admin:lessor_lessorprofile_changelist'),
                         'add_url': reverse('admin:lessor_lessorprofile_add'),
                     },

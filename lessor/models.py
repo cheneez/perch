@@ -4,6 +4,10 @@ from django.db import models
 from accounts.profile_choices import GENDER_CHOICES
 
 
+def _verification_doc_path(instance, filename):
+    return f'verification/{instance.lessor.user_id}/{filename}'
+
+
 class LessorProfile(models.Model):
     user = models.OneToOneField(
         User,
@@ -17,7 +21,7 @@ class LessorProfile(models.Model):
     date_of_birth = models.DateField(null=True, blank=True)
     gender_identity = models.CharField(max_length=100, choices=GENDER_CHOICES)
     gender_self_describe = models.CharField(max_length=200, blank=True)
-    verified = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
     profile_picture = models.ImageField(
         upload_to='profile_pics/leasors/',
         null=True,
@@ -49,3 +53,39 @@ class LessorProfile(models.Model):
 
     def full_name(self):
         return f'{self.first_name} {self.last_name}'.strip()
+
+
+class VerificationRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        VERIFIED = 'verified', 'Verified'
+        DECLINED = 'declined', 'Declined'
+
+    lessor = models.ForeignKey(
+        LessorProfile,
+        on_delete=models.CASCADE,
+        related_name='verification_requests',
+    )
+    government_id = models.FileField(upload_to=_verification_doc_path)
+    property_proof = models.FileField(upload_to=_verification_doc_path)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    admin_feedback = models.TextField(blank=True, null=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(blank=True, null=True)
+    reviewed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_verifications',
+    )
+
+    class Meta:
+        ordering = ['-submitted_at']
+
+    def __str__(self):
+        return f'VerificationRequest({self.lessor.username}, {self.status})'

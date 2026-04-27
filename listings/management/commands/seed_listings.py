@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from accounts.models import Profile
+from accounts.models import ensure_account_profile, ensure_role_profile
 from listings.models import Listing
 
 
@@ -25,12 +25,13 @@ class Command(BaseCommand):
         else:
             self.stdout.write("  User realtor_seed already exists — skipping creation")
 
-        # Ensure profile is realtor + verified so the app lets them in
-        profile, _ = Profile.objects.get_or_create(user=user, defaults={"user_type": "realtor"})
-        if profile.user_type != "realtor" or not profile.email_verified:
-            profile.user_type = "realtor"
-            profile.email_verified = True
-            profile.save()
+        # Ensure the auth/profile graph matches what the app expects.
+        profile = ensure_account_profile(
+            user,
+            user_type="realtor",
+            email_verified=True,
+        )
+        ensure_role_profile(user, profile=profile)
 
         # Create one sample listing if none exist for this user
         if Listing.objects.filter(owner=user).exists():
@@ -53,11 +54,14 @@ class Command(BaseCommand):
                 room_type=Listing.RoomType.WHOLE_APARTMENT,
                 lease_type=Listing.LeaseType.FULL,
                 status=Listing.Status.AVAILABLE,
+                moderation_status=Listing.ModerationStatus.APPROVED,
                 utilities_included=True,
                 has_laundry=True,
                 has_ac_heat=True,
                 parking_available=False,
                 pets_allowed=False,
+                latitude=42.3409,
+                longitude=-71.1663,
             )
             self.stdout.write("  Created sample listing")
 

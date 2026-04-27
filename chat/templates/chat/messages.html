@@ -272,6 +272,12 @@
     const d = await r.json();
     conversations = d.conversations || [];
     renderConversationList();
+    // Support deep-linking: /messages/?conversation=<id>
+    const params = new URLSearchParams(window.location.search);
+    const targetId = parseInt(params.get('conversation') || '', 10);
+    if (!Number.isNaN(targetId) && conversations.some(c => c.id === targetId)) {
+      openConversation(targetId);
+    }
   }
 
   async function fetchMessages(convId) {

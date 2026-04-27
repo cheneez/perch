@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.db.models import Count
 from django.utils import timezone
 
+from accounts.models import ensure_account_profile, ensure_role_profile
 from .models import Listing, ListingImage
 
 
@@ -98,6 +99,16 @@ class ListingAdmin(admin.ModelAdmin):
                     'verified',
                 )
             )
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if not (obj.owner.is_staff or obj.owner.is_superuser):
+            profile = ensure_account_profile(
+                obj.owner,
+                user_type='realtor',
+                email_verified=True,
+            )
+            ensure_role_profile(obj.owner, profile=profile)
 
 
 @admin.register(ListingImage)

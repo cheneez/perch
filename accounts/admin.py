@@ -3,8 +3,16 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import User
 from django.contrib.admin.sites import NotRegistered
 from django.utils import timezone
+from django.contrib.admin.sites import NotRegistered
+from django.contrib.auth.models import User
 
-from .models import Favorite, Profile
+from .models import Favorite
+
+
+try:
+    admin.site.unregister(User)
+except NotRegistered:
+    pass
 
 
 class FavoriteInline(admin.TabularInline):
