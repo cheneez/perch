@@ -122,6 +122,15 @@ class FindHousingView(View):
         max_price = request.GET.get('max_price', '').strip()
         bedrooms  = request.GET.get('bedrooms', '').strip()
         room_type = request.GET.get('room_type', '').strip()
+        radius    = request.GET.get('radius', '1').strip()
+
+        try:
+            radius_float = float(radius)
+            if radius_float not in (0.5, 1.0, 2.0, 5.0):
+                raise ValueError
+        except ValueError:
+            radius_float = 1.0
+            radius = '1'
 
         if min_price:
             qs = qs.filter(price_monthly__gte=min_price)
@@ -132,10 +141,19 @@ class FindHousingView(View):
         if room_type:
             qs = qs.filter(room_type=room_type)
 
-        qs = qs.order_by('-created_at')
+        qs = qs.filter(distance_miles__lte=radius_float).order_by('-created_at')
+
+        def primary_image_url(listing):
+            image = listing.images.first()
+            if not image:
+                return ''
+            if image.image:
+                return image.image.url
+            return image.image_url or ''
+
         favorite_listing_ids = set(
             ListingFavorite.objects.filter(user=request.user).values_list('listing_id', flat=True)
-        )
+        ) if request.user.is_authenticated else set()
 
         map_pins = json.dumps([
             {
@@ -144,6 +162,8 @@ class FindHousingView(View):
                 'lng': l.longitude,
                 'title': l.title,
                 'price': str(l.price_monthly),
+                'image_url': primary_image_url(l),
+                'url': reverse('listings:property', args=[l.pk]),
             }
             for l in qs if l.latitude is not None and l.longitude is not None
         ])
@@ -152,6 +172,8 @@ class FindHousingView(View):
             'listings': qs,
             'map_pins': map_pins,
             'filters': request.GET,
+            'radius': radius,
+            'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
             'favorite_listing_ids': favorite_listing_ids,
         })
 

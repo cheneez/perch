@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% block title %}Find Housing — Perch{% endblock %}
 
+{% block extra_head %}
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&loading=async&callback=initFHMap"></script>
+{% endblock %}
+
 {% block content %}
 <div class="fh-wrapper">
 
@@ -33,6 +37,16 @@
         <option value="">Any</option>
         <option value="room" {% if filters.room_type == "room" %}selected{% endif %}>Room</option>
         <option value="whole_apartment" {% if filters.room_type == "whole_apartment" %}selected{% endif %}>Whole Apt</option>
+      </select>
+    </div>
+
+    <div class="fh-filter-group">
+      <label class="fh-filter-label">Radius</label>
+      <select name="radius" class="fh-select">
+        <option value="0.5" {% if radius == "0.5" %}selected{% endif %}>0.5 mi</option>
+        <option value="1" {% if radius == "1" %}selected{% endif %}>1 mi</option>
+        <option value="2" {% if radius == "2" %}selected{% endif %}>2 mi</option>
+        <option value="5" {% if radius == "5" %}selected{% endif %}>5 mi</option>
       </select>
     </div>
 
@@ -101,7 +115,7 @@
       {% endif %}
     </div>
 
-    {# Right: Leaflet map #}
+    {# Right: Google Maps panel #}
     <div class="fh-map-panel">
       <p class="fh-list-heading">Map View</p>
       <div id="fh-map"></div>
@@ -112,67 +126,79 @@
 {% endblock %}
 
 {% block extra_js %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-(function () {
+function initFHMap() {
   var pins = {{ map_pins|safe }};
+  var radiusMiles = {{ radius }};
+  var BC = { lat: 42.3355, lng: -71.1685 };
 
-  // Default centre: Boston College main campus
-  var defaultLat = 42.3355, defaultLng = -71.1685;
-  var map = L.map('fh-map', { zoomControl: true }).setView([defaultLat, defaultLng], 14);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19,
-  }).addTo(map);
-
-  // Custom house icon
-  function makeIcon(highlighted) {
-    return L.divIcon({
-      className: '',
-      html: '<div class="fh-pin' + (highlighted ? ' fh-pin-active' : '') + '"><i class="bi bi-house-fill"></i></div>',
-      iconSize: [36, 36],
-      iconAnchor: [18, 36],
-      popupAnchor: [0, -38],
-    });
-  }
-
-  var markers = {};
-  var bounds = [];
-
-  pins.forEach(function (p) {
-    var marker = L.marker([p.lat, p.lng], { icon: makeIcon(false) }).addTo(map);
-    marker.bindPopup(
-      '<div class="fh-popup">' +
-      '<strong>' + p.title + '</strong><br>' +
-      '<span class="fh-popup-price">$' + parseFloat(p.price).toLocaleString() + '/mo</span>' +
-      '</div>'
-    );
-
-    marker.on('click', function () {
-      // Highlight sidebar card
-      document.querySelectorAll('.fh-card-shell').forEach(function (c) { c.classList.remove('fh-card-active'); });
-      var card = document.getElementById('fh-card-' + p.pk);
-      if (card) {
-        card.classList.add('fh-card-active');
-        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-      // Update all icons
-      Object.keys(markers).forEach(function (k) {
-        markers[k].setIcon(makeIcon(k === String(p.pk)));
-      });
-    });
-
-    markers[p.pk] = marker;
-    bounds.push([p.lat, p.lng]);
+  var map = new google.maps.Map(document.getElementById('fh-map'), {
+    center: BC,
+    zoom: 14,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: false,
   });
 
-  if (bounds.length) {
-    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+  new google.maps.Circle({
+    map: map,
+    center: BC,
+    radius: radiusMiles * 1609.34,
+    fillColor: '#4285F4',
+    fillOpacity: 0.08,
+    strokeColor: '#4285F4',
+    strokeOpacity: 0.4,
+    strokeWeight: 2,
+    clickable: false,
+  });
+
+  var markers = {};
+  var infoWindow = new google.maps.InfoWindow();
+  var bounds = new google.maps.LatLngBounds();
+  var hasPins = pins.length > 0;
+
+  pins.forEach(function (p) {
+    var marker = new google.maps.Marker({
+      position: { lat: p.lat, lng: p.lng },
+      map: map,
+    });
+
+    var popupImage = p.image_url
+      ? '<img src="' + p.image_url + '" alt="' + p.title + '" style="width:100%;height:100px;object-fit:cover;border-radius:10px;margin-bottom:8px;display:block;">'
+      : '';
+    var popupHtml =
+      '<div style="font-family:\'DM Sans\',sans-serif;padding:6px 10px 8px;min-width:180px;max-width:220px;">' +
+        popupImage +
+        '<div style="font-weight:600;font-size:0.88rem;color:#1a1a2e;margin-bottom:3px;">' + p.title + '</div>' +
+        '<div style="font-size:0.82rem;font-weight:700;color:#0f1f4b;">$' + parseFloat(p.price).toLocaleString() + '<span style="font-weight:400;color:#888;">/mo</span></div>' +
+        '<div style="font-size:0.7rem;color:#aaa;margin-top:4px;letter-spacing:0.02em;">Click to view →</div>' +
+      '</div>';
+
+    marker.addListener('mouseover', function () {
+      infoWindow.setContent(popupHtml);
+      infoWindow.open(map, marker);
+    });
+
+    marker.addListener('mouseout', function () {
+      infoWindow.close();
+    });
+
+    marker.addListener('click', function () {
+      window.location.href = p.url;
+    });
+
+    markers[String(p.pk)] = marker;
+    bounds.extend(marker.getPosition());
+  });
+
+  if (hasPins) {
+    map.fitBounds(bounds, { padding: 40 });
+    google.maps.event.addListenerOnce(map, 'bounds_changed', function () {
+      if (map.getZoom() > 15) map.setZoom(15);
+    });
   }
 
-  // Clicking a card pans map to that listing
+  // Card click: pan to marker, open info window, then navigate
   document.querySelectorAll('.fh-card-shell[data-pk]').forEach(function (cardShell) {
     var card = cardShell.querySelector('.fh-card');
     if (!card) return;
@@ -180,19 +206,23 @@
       var pk = cardShell.dataset.pk;
       if (markers[pk]) {
         e.preventDefault();
-        map.panTo(markers[pk].getLatLng(), { animate: true });
-        markers[pk].openPopup();
+        map.panTo(markers[pk].getPosition());
+        var pin = pins.find(function (p) { return String(p.pk) === pk; });
+        infoWindow.setContent(
+          '<div style="font-family:\'DM Sans\',sans-serif;padding:6px 10px 8px;min-width:180px;max-width:220px;">' +
+            (pin && pin.image_url ? '<img src="' + pin.image_url + '" alt="' + pin.title + '" style="width:100%;height:100px;object-fit:cover;border-radius:10px;margin-bottom:8px;display:block;">' : '') +
+            '<div style="font-weight:600;font-size:0.88rem;color:#1a1a2e;margin-bottom:3px;">' + (pin ? pin.title : '') + '</div>' +
+            (pin ? '<div style="font-size:0.82rem;font-weight:700;color:#0f1f4b;">$' + parseFloat(pin.price).toLocaleString() + '<span style="font-weight:400;color:#888;">/mo</span></div>' : '') +
+          '</div>'
+        );
+        infoWindow.open(map, markers[pk]);
         document.querySelectorAll('.fh-card-shell').forEach(function (c) { c.classList.remove('fh-card-active'); });
         cardShell.classList.add('fh-card-active');
-        Object.keys(markers).forEach(function (k) {
-          markers[k].setIcon(makeIcon(k === pk));
-        });
-        // Navigate after short delay so user sees the map pan
         setTimeout(function () { window.location.href = card.href; }, 600);
       }
     });
   });
-})();
+}
 </script>
 
 <style>
@@ -439,31 +469,6 @@
   overflow: hidden;
   box-shadow: 0 1px 6px rgba(0,0,0,0.1);
 }
-
-/* ── Map pins ── */
-.fh-pin {
-  width: 34px;
-  height: 34px;
-  background: #fff;
-  border: 2px solid #0f1f4b;
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-  transition: background 0.15s, border-color 0.15s;
-}
-.fh-pin i {
-  transform: rotate(45deg);
-  font-size: 15px;
-  color: #0f1f4b;
-}
-.fh-pin-active {
-  background: #0f1f4b;
-  border-color: #0f1f4b;
-}
-.fh-pin-active i { color: #fff; }
 
 /* ── Popup ── */
 .fh-popup { font-size: 0.82rem; min-width: 120px; }

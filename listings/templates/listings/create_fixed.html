@@ -1,6 +1,12 @@
 {% extends 'base.html' %}
 {% block title %}Create Listing — Housing Platform{% endblock %}
 
+{% block extra_head %}
+{% if google_maps_api_key %}
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&loading=async&callback=initPlacesAutocomplete"></script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
@@ -38,114 +44,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-  (function () {
-    const input = document.getElementById("id_address");
-    const list = document.getElementById("address-suggestions");
-    const feedback = document.getElementById("address-validation-message");
-    const form = input ? input.closest("form") : null;
-    if (!input || !list) return;
-
-    let timer = null;
-    let selectedFromSuggestions = false;
-
-    function hideSuggestions() {
-      list.style.display = "none";
-      list.innerHTML = "";
-    }
-
-    function showValidation(msg) {
-      input.classList.add("is-invalid");
-      if (feedback) {
-        feedback.textContent = msg;
-        feedback.classList.remove("d-none");
-      }
-    }
-
-    function clearValidation() {
-      input.classList.remove("is-invalid");
-      if (feedback) {
-        feedback.textContent = "";
-        feedback.classList.add("d-none");
-      }
-    }
-
-    function toStandardAddress(item) {
-      const a = item.address || {};
-      const street = [a.house_number, a.road || a.pedestrian || a.cycleway].filter(Boolean).join(" ");
-      const city = a.city || a.town || a.village || a.hamlet || a.suburb || "";
-      const state = a.state_code || a.state || "";
-      const postal = a.postcode || "";
-      const line = [street, city, [state, postal].filter(Boolean).join(" ")].filter(Boolean).join(", ");
-      if (line) return line;
-      return (item.display_name || "").split(",").slice(0, 3).join(",").trim();
-    }
-
-    function renderSuggestions(items) {
-      if (!items.length) {
-        hideSuggestions();
-        return;
-      }
-      list.innerHTML = "";
-      items.forEach((item) => {
-        const standardAddress = toStandardAddress(item);
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "list-group-item list-group-item-action";
-        btn.textContent = standardAddress;
-        btn.addEventListener("mousedown", function (e) {
-          e.preventDefault();
-          input.value = standardAddress;
-          selectedFromSuggestions = true;
-          clearValidation();
-          hideSuggestions();
-        });
-        list.appendChild(btn);
-      });
-      list.style.display = "block";
-    }
-
-    async function searchAddress(q) {
-      const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&q=" + encodeURIComponent(q);
-      try {
-        const resp = await fetch(url, { headers: { "Accept": "application/json" } });
-        if (!resp.ok) return [];
-        return await resp.json();
-      } catch (_err) {
-        return [];
-      }
-    }
-
-    input.addEventListener("input", function () {
-      const q = input.value.trim();
-      selectedFromSuggestions = false;
-      clearValidation();
-      clearTimeout(timer);
-      if (q.length < 3) {
-        hideSuggestions();
-        return;
-      }
-      timer = setTimeout(async function () {
-        const results = await searchAddress(q);
-        renderSuggestions(results);
-      }, 250);
-    });
-
-    input.addEventListener("blur", function () {
-      setTimeout(hideSuggestions, 120);
-    });
-
-    if (form) {
-      form.addEventListener("submit", function (e) {
-        if (!input.value.trim()) return;
-        if (!selectedFromSuggestions) {
-          e.preventDefault();
-          showValidation("Please select an address from the suggestions.");
-          input.focus();
-        }
-      });
-    }
-  })();
-</script>
+{% include "listings/_places_autocomplete_js.html" %}
 {% endblock %}
-

@@ -2,7 +2,14 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from accounts.models import ensure_account_profile, ensure_role_profile
-from listings.models import Listing
+from listings.models import Listing, ListingImage
+
+
+SEED_IMAGE_URL = (
+    "https://img.freepik.com/premium-vector/"
+    "house-vector-illustration-isolated-white-background_1049408-18539.jpg"
+    "?semt=ais_hybrid&w=740&q=80"
+)
 
 
 class Command(BaseCommand):
@@ -34,35 +41,47 @@ class Command(BaseCommand):
         ensure_role_profile(user, profile=profile)
 
         # Create one sample listing if none exist for this user
-        if Listing.objects.filter(owner=user).exists():
-            self.stdout.write("  Listing already exists for realtor_seed — skipping")
-        else:
-            Listing.objects.create(
-                owner=user,
-                title="Sunny 2BR Near Boston College",
-                description=(
+        listing, listing_created = Listing.objects.get_or_create(
+            owner=user,
+            title="Sunny 2BR Near Boston College",
+            defaults={
+                "description": (
                     "Bright two-bedroom apartment just a short walk from campus. "
                     "Recently renovated kitchen, hardwood floors, and plenty of natural light. "
                     "Heat and hot water included."
                 ),
-                address="25 Commonwealth Ave, Brighton, MA 02135",
-                price_monthly=2400,
-                security_deposit=2400,
-                bedrooms=2,
-                bathrooms=1,
-                distance_miles=0.4,
-                room_type=Listing.RoomType.WHOLE_APARTMENT,
-                lease_type=Listing.LeaseType.FULL,
-                status=Listing.Status.AVAILABLE,
-                moderation_status=Listing.ModerationStatus.APPROVED,
-                utilities_included=True,
-                has_laundry=True,
-                has_ac_heat=True,
-                parking_available=False,
-                pets_allowed=False,
-                latitude=42.3409,
-                longitude=-71.1663,
-            )
+                "address": "25 Commonwealth Ave, Brighton, MA 02135",
+                "price_monthly": 2400,
+                "security_deposit": 2400,
+                "bedrooms": 2,
+                "bathrooms": 1,
+                "distance_miles": 0.4,
+                "room_type": Listing.RoomType.WHOLE_APARTMENT,
+                "lease_type": Listing.LeaseType.FULL,
+                "status": Listing.Status.AVAILABLE,
+                "moderation_status": Listing.ModerationStatus.APPROVED,
+                "utilities_included": True,
+                "has_laundry": True,
+                "has_ac_heat": True,
+                "parking_available": False,
+                "pets_allowed": False,
+                "latitude": 42.3409,
+                "longitude": -71.1663,
+            },
+        )
+        if listing_created:
             self.stdout.write("  Created sample listing")
+        else:
+            self.stdout.write("  Listing already exists for realtor_seed — reusing it")
+
+        seed_listings = Listing.objects.filter(owner=user)
+        for seed_listing in seed_listings:
+            ListingImage.objects.filter(listing=seed_listing).delete()
+            ListingImage.objects.create(
+                listing=seed_listing,
+                image_url=SEED_IMAGE_URL,
+            )
+
+        self.stdout.write(f"  Applied seed image to {seed_listings.count()} listing(s)")
 
         self.stdout.write(self.style.SUCCESS("Done. Log in at /auth/login/ with realtor_seed / perch1234"))

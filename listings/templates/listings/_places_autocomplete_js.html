@@ -1,0 +1,62 @@
+<script>
+(function () {
+  function calculateMilesFromBC(lat, lng) {
+    var BC_LAT = 42.3355;
+    var BC_LNG = -71.1685;
+    var R = 3958.8;
+    var dLat = (lat - BC_LAT) * Math.PI / 180;
+    var dLng = (lng - BC_LNG) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(BC_LAT * Math.PI / 180) * Math.cos(lat * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function clearCoordinatesIfAddressChanged(input, latField, lngField) {
+    var selectedAddress = input.dataset.selectedAddress || '';
+    if (input.value.trim() !== selectedAddress) {
+      latField.value = '';
+      lngField.value = '';
+    }
+  }
+
+  window.initPlacesAutocomplete = function initPlacesAutocomplete() {
+    var input = document.getElementById('id_address');
+    var latField = document.getElementById('id_place_lat');
+    var lngField = document.getElementById('id_place_lng');
+    var distanceField = document.getElementById('id_distance_miles');
+
+    if (!input || !latField || !lngField || !distanceField || !window.google || !google.maps || !google.maps.places) {
+      return;
+    }
+
+    input.dataset.selectedAddress = input.value.trim();
+
+    input.addEventListener('input', function () {
+      clearCoordinatesIfAddressChanged(input, latField, lngField);
+    });
+
+    var autocomplete = new google.maps.places.Autocomplete(input, {
+      types: ['address'],
+      componentRestrictions: { country: 'us' },
+      fields: ['formatted_address', 'geometry'],
+    });
+
+    autocomplete.addListener('place_changed', function () {
+      var place = autocomplete.getPlace();
+      if (!place.geometry) {
+        clearCoordinatesIfAddressChanged(input, latField, lngField);
+        return;
+      }
+
+      var lat = place.geometry.location.lat();
+      var lng = place.geometry.location.lng();
+      input.value = place.formatted_address;
+      input.dataset.selectedAddress = place.formatted_address;
+      latField.value = lat;
+      lngField.value = lng;
+      distanceField.value = calculateMilesFromBC(lat, lng).toFixed(2);
+    });
+  };
+})();
+</script>
