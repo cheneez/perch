@@ -125,12 +125,12 @@ class Command(BaseCommand):
                     'first_name': data['first_name'],
                     'last_name': data['last_name'],
                     'gender_identity': 'Prefer not to say',
-                    'verified': data['verified'],
+                    'is_verified': data['verified'],
                 },
             )
-            if not lp_created and lp.verified != data['verified']:
-                lp.verified = data['verified']
-                lp.save(update_fields=['verified'])
+            if not lp_created and lp.is_verified != data['verified']:
+                lp.is_verified = data['verified']
+                lp.save(update_fields=['is_verified'])
 
             status = 'created' if created else 'exists'
             verified_label = 'verified' if data['verified'] else 'unverified'

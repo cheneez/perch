@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from accounts.models import Profile, ensure_account_profile
 
-from .models import LessorProfile
+from .models import LessorProfile, VerificationRequest
 
 
 class LessorUserAdminForm(forms.ModelForm):
@@ -36,15 +36,15 @@ class LessorUserAdminForm(forms.ModelForm):
             'first_name',
             'last_name',
             'gender_identity',
-            'verified',
+            'is_verified',
         )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if 'gender_identity' in self.fields:
             self.fields['gender_identity'].required = False
-        if 'verified' in self.fields:
-            self.fields['verified'].required = False
+        if 'is_verified' in self.fields:
+            self.fields['is_verified'].required = False
 
         if self.instance.pk and self.instance.user_id:
             user = self.instance.user
@@ -65,9 +65,9 @@ class LessorUserAdminForm(forms.ModelForm):
             self.fields['gender_identity'].initial = (
                 self.fields['gender_identity'].initial or 'prefer_not'
             )
-        if 'verified' in self.fields:
-            self.fields['verified'].initial = (
-                self.fields['verified'].initial if self.fields['verified'].initial is not None else True
+        if 'is_verified' in self.fields:
+            self.fields['is_verified'].initial = (
+                self.fields['is_verified'].initial if self.fields['is_verified'].initial is not None else True
             )
 
     def clean_username(self):
@@ -194,7 +194,7 @@ class LessorUserAdmin(admin.ModelAdmin):
                         'first_name',
                         'last_name',
                         'gender_identity',
-                        'verified',
+                        'is_verified',
                     )
                 },
             ),
@@ -240,7 +240,7 @@ class LessorUserAdmin(admin.ModelAdmin):
         obj.username = cleaned['username']
         obj.email = cleaned['email']
         obj.gender_identity = cleaned.get('gender_identity') or 'prefer_not'
-        obj.verified = cleaned.get('verified', True)
+        obj.is_verified = cleaned.get('is_verified', True)
         super().save_model(request, obj, form, change)
 
         profile = ensure_account_profile(
@@ -260,3 +260,74 @@ class LessorUserAdmin(admin.ModelAdmin):
                     'status_updated_by',
                 )
             )
+
+
+@admin.register(VerificationRequest)
+class VerificationRequestAdmin(admin.ModelAdmin):
+    list_display = ('lessor_name', 'lessor_email', 'status', 'submitted_at', 'reviewed_at')
+    list_filter = ('status',)
+    search_fields = ('lessor__first_name', 'lessor__last_name', 'lessor__user__email')
+    readonly_fields = (
+        'lessor',
+        'submitted_at',
+        'reviewed_at',
+        'reviewed_by',
+        'government_id_link',
+        'property_proof_link',
+    )
+    fields = (
+        'lessor',
+        'submitted_at',
+        'government_id_link',
+        'property_proof_link',
+        'status',
+        'admin_feedback',
+        'reviewed_at',
+        'reviewed_by',
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('lessor', 'lessor__user', 'reviewed_by')
+
+    @admin.display(description='Lessor')
+    def lessor_name(self, obj):
+        return obj.lessor.full_name() or obj.lessor.username
+
+    @admin.display(description='Email')
+    def lessor_email(self, obj):
+        return obj.lessor.user.email
+
+    @admin.display(description='Government ID')
+    def government_id_link(self, obj):
+        from django.utils.html import format_html
+        if obj.government_id:
+            return format_html('<a href="{}" target="_blank">View / Download</a>', obj.government_id.url)
+        return '—'
+
+    @admin.display(description='Property Proof')
+    def property_proof_link(self, obj):
+        from django.utils.html import format_html
+        if obj.property_proof:
+            return format_html('<a href="{}" target="_blank">View / Download</a>', obj.property_proof.url)
+        return '—'
+
+    def save_model(self, request, obj, form, change):
+        if change and obj.pk:
+            original_status = VerificationRequest.objects.filter(pk=obj.pk).values_list('status', flat=True).first()
+        else:
+            original_status = None
+
+        status_changed = original_status != obj.status
+        if status_changed and obj.status in (VerificationRequest.Status.VERIFIED, VerificationRequest.Status.DECLINED):
+            obj.reviewed_at = timezone.now()
+            obj.reviewed_by = request.user
+
+        super().save_model(request, obj, form, change)
+
+        if status_changed:
+            if obj.status == VerificationRequest.Status.VERIFIED:
+                obj.lessor.is_verified = True
+                obj.lessor.save(update_fields=['is_verified'])
+            elif obj.status == VerificationRequest.Status.DECLINED:
+                obj.lessor.is_verified = False
+                obj.lessor.save(update_fields=['is_verified'])

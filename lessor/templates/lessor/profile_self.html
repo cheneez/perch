@@ -58,10 +58,10 @@
             </dd>
             <dt class="col-sm-4">Verified</dt>
             <dd class="col-sm-8">
-              {% if p.verified %}
-              <span class="badge text-bg-success">Yes</span>
+              {% if p.is_verified %}
+              <span class="badge text-bg-success"><i class="bi bi-patch-check-fill me-1"></i>Verified</span>
               {% else %}
-              <span class="badge text-bg-secondary">No</span>
+              <span class="badge text-bg-secondary">Not verified</span>
               {% endif %}
             </dd>
           </dl>

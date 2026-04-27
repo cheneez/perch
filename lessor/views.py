@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import FormView, TemplateView
@@ -11,8 +11,8 @@ from accounts.public_profile import (
     try_resolve_public_profile,
 )
 
-from .forms import LessorCreateProfileForm, LessorEditDetailsForm, LessorEditProfileForm
-from .models import LessorProfile
+from .forms import LessorCreateProfileForm, LessorEditDetailsForm, LessorEditProfileForm, VerificationRequestForm
+from .models import LessorProfile, VerificationRequest
 
 
 class LessorProfileRequiredMixin:
@@ -60,17 +60,54 @@ class LessorPlaceholderView(LessorProfileRequiredMixin, RoleRequiredMixin, Templ
         return context
 
 
-class LessorVerificationPlaceholderView(LessorProfileRequiredMixin, RoleRequiredMixin, TemplateView):
-    """Read-only verification status for feature card link."""
-
+class LessorVerificationView(LessorProfileRequiredMixin, RoleRequiredMixin, View):
     required_role = 'lessor'
     template_name = 'lessor/verification_status.html'
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['user'] = self.request.user
-        ctx['p'] = get_object_or_404(LessorProfile, user=self.request.user)
-        return ctx
+    def _get_profile_and_latest(self, request):
+        profile = get_object_or_404(LessorProfile, user=request.user)
+        latest = profile.verification_requests.order_by('-submitted_at').first()
+        return profile, latest
+
+    def get(self, request, *args, **kwargs):
+        profile, latest = self._get_profile_and_latest(request)
+        ctx = {
+            'user': request.user,
+            'p': profile,
+            'latest': latest,
+            'form': VerificationRequestForm(),
+        }
+        return render(request, self.template_name, ctx)
+
+    def post(self, request, *args, **kwargs):
+        profile, latest = self._get_profile_and_latest(request)
+
+        # Block if already pending or verified
+        if latest and latest.status == VerificationRequest.Status.PENDING:
+            messages.warning(request, 'Your verification is already under review.')
+            return redirect('lessor:verification')
+        if latest and latest.status == VerificationRequest.Status.VERIFIED:
+            messages.info(request, 'Your account is already verified.')
+            return redirect('lessor:verification')
+
+        form = VerificationRequestForm(request.POST, request.FILES)
+        if form.is_valid():
+            VerificationRequest.objects.create(
+                lessor=profile,
+                government_id=form.cleaned_data['government_id'],
+                property_proof=form.cleaned_data['property_proof'],
+                status=VerificationRequest.Status.PENDING,
+            )
+            messages.success(request, 'Your documents have been submitted for review.')
+            return redirect('lessor:verification')
+
+        ctx = {
+            'user': request.user,
+            'p': profile,
+            'latest': latest,
+            'form': form,
+        }
+        return render(request, self.template_name, ctx)
 
 
 class LessorCreateProfileView(RoleRequiredMixin, FormView):
