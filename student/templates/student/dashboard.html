@@ -10,9 +10,6 @@
       <h2 class="mb-1">Dashboard</h2>
       <p class="text-muted small mb-0">Welcome back, {{ user.first_name|default:user.username }}</p>
     </div>
-    <div class="text-muted small">
-      {% now "l, F j, Y" %}
-    </div>
   </div>
 
   <div class="card mb-4">
@@ -64,12 +61,13 @@
           {% endfor %}
         </div>
       {% else %}
-        <div class="placeholder-content dashboard-empty-state">
-          <span>No favorited listings yet.</span>
-          <div class="mt-2">
-            <a href="{% url 'student:find_housing' %}" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-search me-1"></i>Find a Listing
-            </a>
+        <div class="dashboard-empty-map-wrap">
+          <div class="dashboard-empty-map-header d-flex justify-content-end align-items-center mb-2">
+            <span class="badge text-bg-light border">Click map to open listings</span>
+          </div>
+          <div class="dashboard-empty-map-shell">
+            <div id="dashboard-empty-map"></div>
+            <a href="{% url 'student:find_housing' %}" class="dashboard-empty-map-link" aria-label="Open Find Housing"></a>
           </div>
         </div>
       {% endif %}
@@ -265,5 +263,87 @@
   flex-direction: column;
   text-align: center;
 }
+.dashboard-empty-map-wrap {
+  width: 100%;
+}
+.dashboard-empty-map-shell {
+  position: relative;
+  border: 1px solid #e7e7e7;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8f9fa;
+}
+#dashboard-empty-map {
+  width: 100%;
+  height: 260px;
+}
+.dashboard-empty-map-link {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  cursor: pointer;
+}
 </style>
+{% endblock %}
+
+{% block extra_js %}
+{% if not favorite_listings and google_maps_api_key %}
+{{ dashboard_map_pins|json_script:"dashboard-map-pins-data" }}
+<script>
+function initDashboardEmptyMap() {
+  var mapEl = document.getElementById('dashboard-empty-map');
+  if (!mapEl || !window.google || !google.maps) return;
+
+  var pinsDataEl = document.getElementById('dashboard-map-pins-data');
+  var pins = [];
+  if (pinsDataEl && pinsDataEl.textContent) {
+    try {
+      pins = JSON.parse(pinsDataEl.textContent);
+    } catch (e) {
+      pins = [];
+    }
+  }
+  var BC = { lat: 42.3355, lng: -71.1685 };
+  var map = new google.maps.Map(mapEl, {
+    center: BC,
+    zoom: 14,
+    disableDefaultUI: true,
+    zoomControl: false,
+    gestureHandling: 'none',
+  });
+
+  new google.maps.Circle({
+    map: map,
+    center: BC,
+    radius: 1609.34,
+    fillColor: '#4285F4',
+    fillOpacity: 0.08,
+    strokeColor: '#4285F4',
+    strokeOpacity: 0.4,
+    strokeWeight: 2,
+    clickable: false,
+  });
+
+  var bounds = new google.maps.LatLngBounds();
+  var hasPins = false;
+  pins.forEach(function (p) {
+    if (typeof p.lat !== 'number' || typeof p.lng !== 'number') return;
+    hasPins = true;
+    var marker = new google.maps.Marker({
+      position: { lat: p.lat, lng: p.lng },
+      map: map,
+    });
+    bounds.extend(marker.getPosition());
+  });
+
+  if (hasPins) {
+    map.fitBounds(bounds, { padding: 30 });
+    google.maps.event.addListenerOnce(map, 'bounds_changed', function () {
+      if (map.getZoom() > 15) map.setZoom(15);
+    });
+  }
+}
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initDashboardEmptyMap"></script>
+{% endif %}
 {% endblock %}

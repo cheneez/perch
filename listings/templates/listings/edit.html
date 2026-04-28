@@ -1,11 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Edit Listing — Housing Platform{% endblock %}
 
-{% block extra_head %}
-{% if google_maps_api_key %}
-<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&loading=async&callback=initPlacesAutocomplete"></script>
-{% endif %}
-{% endblock %}
 {% block content %}
 <div class="container-fluid">
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
@@ -31,7 +26,7 @@
 
           <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            {% include "listings/_listing_form_fields.html" %}
+            {% include "listings/_listing_form_fields.html" with is_student_sublease=is_student_sublease %}
 
             {% if listing.images.all %}
               <h5 class="mt-4 mb-3">Existing Photos</h5>
@@ -78,4 +73,7 @@
 
 {% block extra_js %}
 {% include "listings/_places_autocomplete_js.html" %}
+{% if google_maps_api_key %}
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&callback=initPlacesAutocomplete"></script>
+{% endif %}
 {% endblock %}
