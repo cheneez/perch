@@ -87,6 +87,21 @@ class StudentDashboardView(StudentProfileRequiredMixin, RoleRequiredMixin, Templ
         context = super().get_context_data(**kwargs)
         context['user'] = self.request.user
         user = self.request.user
+        available_listings = (
+            Listing.objects.publicly_visible()
+            .filter(status=Listing.Status.AVAILABLE, distance_miles__lte=1.0)
+            .prefetch_related("images")
+            .order_by("-created_at")
+        )
+
+        def primary_image_url(listing):
+            image = listing.images.first()
+            if not image:
+                return ""
+            if image.image:
+                return image.image.url
+            return image.image_url or ""
+
         context['favorite_listings'] = (
             Listing.objects.accessible_to(self.request.user)
             .filter(favorited_by__user=user, status='available')
@@ -97,6 +112,20 @@ class StudentDashboardView(StudentProfileRequiredMixin, RoleRequiredMixin, Templ
         context['favorite_listing_ids'] = set(
             ListingFavorite.objects.filter(user=user).values_list('listing_id', flat=True)
         )
+        context["dashboard_map_pins"] = json.dumps([
+            {
+                "pk": listing.pk,
+                "lat": listing.latitude,
+                "lng": listing.longitude,
+                "title": listing.title,
+                "price": str(listing.price_monthly),
+                "image_url": primary_image_url(listing),
+                "url": reverse("listings:property", args=[listing.pk]),
+            }
+            for listing in available_listings
+            if listing.latitude is not None and listing.longitude is not None
+        ])
+        context["google_maps_api_key"] = settings.GOOGLE_MAPS_API_KEY
         context["dashboard_groups"] = (
             Group.objects
             .filter(memberships__user=user)
@@ -132,11 +161,12 @@ class StudentDashboardView(StudentProfileRequiredMixin, RoleRequiredMixin, Templ
 class FindHousingView(View):
 
     def get(self, request):
-        qs = (
+        available_qs = (
             Listing.objects.publicly_visible()
             .filter(status=Listing.Status.AVAILABLE)
             .prefetch_related('images')
         )
+        qs = available_qs
 
         min_price  = request.GET.get('min_price', '').strip()
         max_price  = request.GET.get('max_price', '').strip()
@@ -144,6 +174,7 @@ class FindHousingView(View):
         room_type  = request.GET.get('room_type', '').strip()
         lease_type = request.GET.get('lease_type', '').strip()
         radius     = request.GET.get('radius', '1').strip()
+        address    = request.GET.get('address', '').strip()
 
         try:
             radius_float = float(radius)
@@ -153,18 +184,38 @@ class FindHousingView(View):
             radius_float = 1.0
             radius = '1'
 
+        suggestions_qs = available_qs
         if min_price:
             qs = qs.filter(price_monthly__gte=min_price)
+            suggestions_qs = suggestions_qs.filter(price_monthly__gte=min_price)
         if max_price:
             qs = qs.filter(price_monthly__lte=max_price)
+            suggestions_qs = suggestions_qs.filter(price_monthly__lte=max_price)
         if bedrooms:
             qs = qs.filter(bedrooms=bedrooms)
+            suggestions_qs = suggestions_qs.filter(bedrooms=bedrooms)
         if room_type:
             qs = qs.filter(room_type=room_type)
+            suggestions_qs = suggestions_qs.filter(room_type=room_type)
         if lease_type:
             qs = qs.filter(lease_type=lease_type)
+            suggestions_qs = suggestions_qs.filter(lease_type=lease_type)
 
-        qs = qs.filter(distance_miles__lte=radius_float).order_by('-created_at')
+        qs = qs.filter(distance_miles__lte=radius_float)
+        suggestions_qs = suggestions_qs.filter(distance_miles__lte=radius_float)
+
+        if address:
+            qs = qs.filter(address__iexact=address)
+
+        qs = qs.order_by('-created_at')
+
+        address_suggestions = list(
+            suggestions_qs.exclude(address__isnull=True)
+            .exclude(address__exact='')
+            .values_list('address', flat=True)
+            .order_by('address')
+            .distinct()
+        )
 
         def primary_image_url(listing):
             image = listing.images.first()
@@ -196,6 +247,7 @@ class FindHousingView(View):
             'map_pins': map_pins,
             'filters': request.GET,
             'radius': radius,
+            'address_suggestions': address_suggestions,
             'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
             'favorite_listing_ids': favorite_listing_ids,
         })

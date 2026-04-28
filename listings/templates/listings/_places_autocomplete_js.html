@@ -29,6 +29,10 @@
     if (!input || !latField || !lngField || !distanceField || !window.google || !google.maps || !google.maps.places) {
       return;
     }
+    if (input.dataset.placesAutocompleteBound === '1') {
+      return;
+    }
+    input.dataset.placesAutocompleteBound = '1';
 
     input.dataset.selectedAddress = input.value.trim();
 

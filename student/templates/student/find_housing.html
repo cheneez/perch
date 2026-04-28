@@ -59,6 +59,21 @@
       </select>
     </div>
 
+    <div class="fh-filter-group fh-filter-group-address">
+      <label class="fh-filter-label">Address</label>
+      <div class="fh-address-input-wrap">
+        <input
+          type="text"
+          id="fh-address-input"
+          name="address"
+          class="fh-input fh-address-input"
+          placeholder="Search exact listing address"
+          value="{{ filters.address|default:'' }}"
+          autocomplete="off">
+        <div id="fh-address-suggestions" class="list-group fh-address-suggestions" style="display:none;"></div>
+      </div>
+    </div>
+
     <button type="submit" class="fh-btn-apply">Apply</button>
     {% if filters %}
       <a href="?" class="fh-btn-clear">Clear</a>
@@ -135,7 +150,70 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ address_suggestions|json_script:"fh-address-suggestions-data" }}
 <script>
+function initFHAddressSuggestions() {
+  var input = document.getElementById('fh-address-input');
+  var list = document.getElementById('fh-address-suggestions');
+  var dataEl = document.getElementById('fh-address-suggestions-data');
+  if (!input || !list || !dataEl) return;
+
+  var addresses = [];
+  try {
+    addresses = JSON.parse(dataEl.textContent || '[]');
+  } catch (e) {
+    addresses = [];
+  }
+
+  function hideSuggestions() {
+    list.style.display = 'none';
+    list.innerHTML = '';
+  }
+
+  function renderSuggestions(query) {
+    var q = (query || '').trim().toLowerCase();
+    if (!q) {
+      hideSuggestions();
+      return;
+    }
+
+    var matches = addresses
+      .filter(function (addr) { return addr.toLowerCase().indexOf(q) !== -1; })
+      .slice(0, 8);
+
+    if (!matches.length) {
+      hideSuggestions();
+      return;
+    }
+
+    list.innerHTML = '';
+    matches.forEach(function (addr) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'list-group-item list-group-item-action';
+      btn.textContent = addr;
+      btn.addEventListener('click', function () {
+        input.value = addr;
+        hideSuggestions();
+      });
+      list.appendChild(btn);
+    });
+    list.style.display = 'block';
+  }
+
+  input.addEventListener('input', function () {
+    renderSuggestions(input.value);
+  });
+  input.addEventListener('focus', function () {
+    renderSuggestions(input.value);
+  });
+  input.addEventListener('blur', function () {
+    setTimeout(hideSuggestions, 120);
+  });
+}
+
+initFHAddressSuggestions();
+
 function initFHMap() {
   var pins = {{ map_pins|safe }};
   var radiusMiles = {{ radius }};
@@ -260,6 +338,12 @@ function initFHMap() {
   flex-direction: column;
   gap: 3px;
 }
+.fh-filter-group-address {
+  margin-left: 0;
+}
+.fh-address-input-wrap {
+  position: relative;
+}
 
 .fh-filter-label {
   font-size: 0.7rem;
@@ -287,6 +371,19 @@ function initFHMap() {
   transition: border-color 0.15s;
 }
 .fh-input { width: 90px; }
+.fh-address-input { width: 220px; min-width: 220px; }
+.fh-address-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 25;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
 .fh-select { min-width: 110px; }
 .fh-input:focus, .fh-select:focus { border-color: #0f1f4b; }
 
@@ -485,6 +582,8 @@ function initFHMap() {
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
+  .fh-filter-group-address { margin-left: 0; }
+  .fh-address-input { width: 100%; min-width: 0; }
   .fh-body { flex-direction: column; }
   .fh-list { width: 100%; border-right: none; border-bottom: 1px solid #e4e4e4; max-height: 45vh; }
   .fh-map-panel { padding: 8px; }

@@ -10,7 +10,6 @@ urlpatterns = [
     path('messages/', views.LessorMessagesView.as_view(), name='messages'),
     path('create-listing/', views.LessorPlaceholderView.as_view(), {'page_title': 'Create listing'}, name='create_listing'),
     path('listings/', views.LessorPlaceholderView.as_view(), {'page_title': 'View listings'}, name='view_listings'),
-    path('find-tenants/', views.LessorPlaceholderView.as_view(), {'page_title': 'Find tenants'}, name='find_tenants'),
     path('verification/', views.LessorVerificationView.as_view(), name='verification'),
     path('profile/', views.LessorProfileSelfView.as_view(), name='profile'),
     path('profile/<int:user_id>/', views.LessorProfileOtherView.as_view(), name='public_profile'),
