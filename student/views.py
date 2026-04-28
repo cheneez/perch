@@ -410,6 +410,7 @@ class StudentProfileOtherView(StudentProfileRequiredMixin, RoleRequiredMixin, Te
             'student:public_profile_favorite',
             kwargs={'user_id': uid},
         )
+        ctx['start_chat_url'] = f"{reverse('student:messages')}?start_chat={uid}"
         return ctx
 
 

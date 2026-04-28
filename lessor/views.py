@@ -258,6 +258,7 @@ class LessorProfileOtherView(LessorProfileRequiredMixin, RoleRequiredMixin, Temp
             'lessor:public_profile_favorite',
             kwargs={'user_id': uid},
         )
+        ctx['start_chat_url'] = f"{reverse('lessor:messages')}?start_chat={uid}"
         return ctx
 
 

@@ -198,7 +198,7 @@
 (function () {
   'use strict';
 
-  const CURRENT_USER_ID = {{ user.id }};
+  const CURRENT_USER_ID = Number('{{ user.id|default:"0" }}');
   const API_BASE = '/chat/api';
   const WS_SCHEME = window.location.protocol === 'https:' ? 'wss' : 'ws';
 
@@ -208,6 +208,7 @@
   let activeConvCreatedBy = null;
   let activeConvParticipants = [];
   let chatSocket = null;
+  let didHandleInitialRoute = false;
 
   const $ = id => document.getElementById(id);
   const conversationList = $('conversationList');
@@ -328,11 +329,9 @@
     const d = await r.json();
     conversations = d.conversations || [];
     renderConversationList();
-    // Support deep-linking: /messages/?conversation=<id>
-    const params = new URLSearchParams(window.location.search);
-    const targetId = parseInt(params.get('conversation') || '', 10);
-    if (!Number.isNaN(targetId) && conversations.some(c => c.id === targetId)) {
-      openConversation(targetId);
+    if (!didHandleInitialRoute) {
+      didHandleInitialRoute = true;
+      await handleInitialRoute();
     }
   }
 
@@ -349,6 +348,51 @@
       body: JSON.stringify({ user_ids: userIds, name: name || '' }),
     });
     return r.json();
+  }
+
+  async function ensureDirectConversationWith(userId) {
+    const existing = conversations.find(c =>
+      !c.is_group &&
+      Array.isArray(c.participants) &&
+      c.participants.length === 2 &&
+      c.participants.some(p => p.id === userId)
+    );
+    if (existing) return existing.id;
+
+    const created = await apiCreateConversation([userId], '');
+    if (!created || !created.conversation || !created.conversation.id) return null;
+    return created.conversation.id;
+  }
+
+  async function handleInitialRoute() {
+    const params = new URLSearchParams(window.location.search);
+    const startChatUserId = parseInt(params.get('start_chat') || '', 10);
+    const targetConversationId = parseInt(params.get('conversation') || '', 10);
+
+    if (!Number.isNaN(startChatUserId) && startChatUserId !== CURRENT_USER_ID) {
+      const conversationId = await ensureDirectConversationWith(startChatUserId);
+      if (conversationId) {
+        if (!conversations.some(c => c.id === conversationId)) {
+          const refreshed = await fetch(`${API_BASE}/conversations/`);
+          const refreshedData = await refreshed.json();
+          conversations = refreshedData.conversations || [];
+          renderConversationList();
+        }
+        openConversation(conversationId);
+        const nextParams = new URLSearchParams(window.location.search);
+        nextParams.delete('start_chat');
+        nextParams.set('conversation', String(conversationId));
+        const nextQuery = nextParams.toString();
+        const nextUrl = nextQuery ? `${window.location.pathname}?${nextQuery}` : window.location.pathname;
+        window.history.replaceState({}, '', nextUrl);
+      }
+      return;
+    }
+
+    // Support deep-linking: /messages/?conversation=<id>
+    if (!Number.isNaN(targetConversationId) && conversations.some(c => c.id === targetConversationId)) {
+      openConversation(targetConversationId);
+    }
   }
 
   async function apiSearchUsers(query, type) {
