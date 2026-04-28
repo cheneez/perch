@@ -69,6 +69,8 @@
       <a class="sidebar-link {% if url_ns == 'groups' %}active{% endif %}" href="{% url 'groups:index' %}"><i class="bi bi-people"></i><span class="sidebar-label">Groups</span></a>
       <a class="sidebar-link {% if url_name == 'roommates' %}active{% endif %}" href="{% url 'student:roommates' %}"><i class="bi bi-person-badge"></i><span class="sidebar-label">Roommates</span></a>
       <a class="sidebar-link {% if url_name == 'find_housing' %}active{% endif %}" href="{% url 'student:find_housing' %}"><i class="bi bi-search"></i><span class="sidebar-label">Find Housing</span></a>
+      <a class="sidebar-link {% if url_name == 'listings-create' %}active{% endif %}" href="{% url 'listings:listings-create' %}"><i class="bi bi-plus-square"></i><span class="sidebar-label">Create listing</span></a>
+      <a class="sidebar-link {% if url_name == 'listings-list' %}active{% endif %}" href="{% url 'listings:listings-list' %}"><i class="bi bi-list-ul"></i><span class="sidebar-label">My listings</span></a>
       <a class="sidebar-link {% if url_name == 'profile' %}active{% endif %}" href="{% url 'student:profile' %}"><i class="bi bi-person-circle"></i><span class="sidebar-label">My profile</span></a>
       {% elif account_user_type == 'realtor' or account_user_type == 'lessor' %}
       <a class="sidebar-link {% if url_name == 'dashboard' %}active{% endif %}" href="{% url 'lessor:dashboard' %}"><i class="bi bi-house-door"></i><span class="sidebar-label">Overview</span></a>

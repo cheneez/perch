@@ -202,7 +202,7 @@ LISTING_SEEDS = [
         'bathrooms': 1,
         'distance_miles': 0.8,
         'room_type': Listing.RoomType.WHOLE_APARTMENT,
-        'lease_type': Listing.LeaseType.SHORT_TERM,
+        'lease_type': Listing.LeaseType.SUBLEASE,
         'status': Listing.Status.AVAILABLE,
         'moderation_status': Listing.ModerationStatus.PENDING,
         'latitude': 42.3447,

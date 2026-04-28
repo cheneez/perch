@@ -13,7 +13,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from chat.models import Conversation, Message
-from .forms import ListingForm
+from .forms import ListingForm, StudentSubleaseForm
 from .models import Listing, ListingFavorite, ListingImage, ListingReview
 
 BC_MAIN_CAMPUS_LAT = 42.3355
@@ -88,13 +88,29 @@ def _update_listing_location_data(listing, post):
         listing.longitude = lng
         listing.distance_miles = distance_miles
 
+def _is_student(user):
+    try:
+        return user.profile.user_type == "student"
+    except Exception:
+        return False
+
+
+def _listing_form_class(user):
+    return StudentSubleaseForm if _is_student(user) else ListingForm
+
+
 @login_required
 def create_listing(request):
+    is_student_sublease = _is_student(request.user)
+    FormClass = _listing_form_class(request.user)
+
     if request.method == "POST":
-        form = ListingForm(request.POST, request.FILES)
+        form = FormClass(request.POST, request.FILES)
         if form.is_valid():
             listing = form.save(commit=False)
             listing.owner = request.user
+            if is_student_sublease:
+                listing.lease_type = "sublease"
             listing.save()
             _update_listing_location_data(listing, request.POST)
 
@@ -106,9 +122,10 @@ def create_listing(request):
             return redirect("listings:listing-detail", pk=listing.pk)
         messages.error(request, "Please fix the errors below.")
     else:
-        form = ListingForm()
+        form = FormClass()
     return render(request, "listings/create_fixed.html", {
         "form": form,
+        "is_student_sublease": is_student_sublease,
         "google_maps_api_key": settings.GOOGLE_MAPS_API_KEY,
     })
 
@@ -128,30 +145,37 @@ def listing_detail(request, pk):
 @login_required
 def edit_listing(request, pk):
     listing = get_object_or_404(Listing, pk=pk, owner=request.user)
-    if request.method == "POST":
-        form = ListingForm(request.POST, request.FILES, instance=listing)
-        if form.is_valid():
-            listing = form.save()
+    is_student_sublease = _is_student(request.user)
+    FormClass = _listing_form_class(request.user)
 
-            if listing.latitude is None or "address" in form.changed_data:
-                _update_listing_location_data(listing, request.POST)
+    if request.method == "POST":
+        form = FormClass(request.POST, request.FILES, instance=listing)
+        if form.is_valid():
+            updated = form.save(commit=False)
+            if is_student_sublease:
+                updated.lease_type = "sublease"
+            updated.save()
+
+            if updated.latitude is None or "address" in form.changed_data:
+                _update_listing_location_data(updated, request.POST)
 
             delete_ids = request.POST.getlist("delete_images")
             if delete_ids:
-                ListingImage.objects.filter(listing=listing, id__in=delete_ids).delete()
+                ListingImage.objects.filter(listing=updated, id__in=delete_ids).delete()
 
             images = request.FILES.getlist("images")
             for image in images:
-                ListingImage.objects.create(listing=listing, image=image)
+                ListingImage.objects.create(listing=updated, image=image)
 
             messages.success(request, "Listing updated successfully.")
-            return redirect("listings:listing-detail", pk=listing.pk)
+            return redirect("listings:listing-detail", pk=updated.pk)
         messages.error(request, "Please fix the errors below.")
     else:
-        form = ListingForm(instance=listing)
+        form = FormClass(instance=listing)
     return render(request, "listings/edit.html", {
         "form": form,
         "listing": listing,
+        "is_student_sublease": is_student_sublease,
         "google_maps_api_key": settings.GOOGLE_MAPS_API_KEY,
     })
 

@@ -41,6 +41,15 @@
     </div>
 
     <div class="fh-filter-group">
+      <label class="fh-filter-label">Lease</label>
+      <select name="lease_type" class="fh-select">
+        <option value="">Any</option>
+        <option value="full" {% if filters.lease_type == "full" %}selected{% endif %}>Full Lease</option>
+        <option value="sublease" {% if filters.lease_type == "sublease" %}selected{% endif %}>Sublease</option>
+      </select>
+    </div>
+
+    <div class="fh-filter-group">
       <label class="fh-filter-label">Radius</label>
       <select name="radius" class="fh-select">
         <option value="0.5" {% if radius == "0.5" %}selected{% endif %}>0.5 mi</option>
