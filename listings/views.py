@@ -118,7 +118,7 @@ def create_listing(request):
             for image in images:
                 ListingImage.objects.create(listing=listing, image=image)
 
-            messages.success(request, "Listing created successfully.")
+            messages.success(request, "Listing created and submitted for approval.")
             return redirect("listings:listing-detail", pk=listing.pk)
         messages.error(request, "Please fix the errors below.")
     else:
