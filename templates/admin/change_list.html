@@ -41,15 +41,12 @@
 
 {% block coltype %}{% endblock %}
 
+{% block content_title %}
+  {% if is_popup %}{{ block.super }}{% endif %}
+{% endblock %}
+
 {% block content %}
   <div id="content-main" class="perch-changelist">
-    {% block object-tools %}
-        <ul class="object-tools">
-          {% block object-tools-items %}
-            {% change_list_object_tools %}
-          {% endblock %}
-        </ul>
-    {% endblock %}
     {% if cl.formset and cl.formset.errors %}
         <p class="errornote">
         {% blocktranslate count counter=cl.formset.total_error_count %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktranslate %}
@@ -75,7 +72,21 @@
           </search>
           {% endif %}
         {% endblock %}
-        <div>
+        <div class="perch-changelist-main">
+          <header class="perch-changelist-header">
+            {% if title and not is_popup %}
+            <div class="perch-page-heading perch-page-heading--changelist">
+              <h1>{{ title }}</h1>
+            </div>
+            {% endif %}
+            {% block object-tools %}
+              <ul class="object-tools">
+                {% block object-tools-items %}
+                  {% change_list_object_tools %}
+                {% endblock %}
+              </ul>
+            {% endblock %}
+          </header>
           {% block search %}{% search_form cl %}{% endblock %}
           {% block date_hierarchy %}{% if cl.date_hierarchy %}{% date_hierarchy cl %}{% endif %}{% endblock %}
 

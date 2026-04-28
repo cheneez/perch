@@ -66,9 +66,12 @@ body.perch-admin-shell a.perch-admin-link-card:focus-visible {
 }
 
 .perch-shell {
-  width: min(1400px, calc(100vw - 48px));
-  margin: 0 auto;
+  /* Use % not vw so the column stays centered when a vertical scrollbar appears */
+  width: min(1400px, calc(100% - 48px));
+  margin-inline: auto;
+  max-width: 100%;
   padding-inline: 0;
+  box-sizing: border-box;
 }
 
 .perch-topbar {
@@ -80,9 +83,11 @@ body.perch-admin-shell a.perch-admin-link-card:focus-visible {
 }
 
 .perch-topbar-inner {
-  width: min(1400px, calc(100vw - 48px));
-  margin: 0 auto;
+  width: min(1400px, calc(100% - 48px));
+  margin-inline: auto;
+  max-width: 100%;
   padding-inline: 0;
+  box-sizing: border-box;
   min-height: 82px;
   display: flex;
   align-items: center;
@@ -241,6 +246,12 @@ body.perch-admin-shell a.perch-admin-link-card:focus-visible {
 
 .perch-breadcrumbs-wrap {
   padding: 1rem 0 0;
+}
+
+/* Match white card horizontal inset so breadcrumbs line up with changelist content */
+.perch-breadcrumbs-wrap .perch-shell {
+  padding-inline: clamp(1.25rem, 2vw, 2rem);
+  box-sizing: border-box;
 }
 
 .perch-breadcrumbs {
@@ -579,6 +590,7 @@ select,
 }
 
 body.perch-admin-shell #container {
+  min-width: 0;
   width: 100%;
 }
 
@@ -587,6 +599,19 @@ body.perch-admin-shell #content {
   width: 100%;
   max-width: none;
   margin-left: 0;
+}
+
+/* Django admin base.css pads #content; we already pad .perch-content-surface */
+body.perch-admin-shell #content.perch-content-body {
+  box-sizing: border-box;
+  padding: 0 !important;
+}
+
+body.perch-admin-shell #content-main {
+  float: none !important;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Align Django admin internals with Perch (changelist / forms). */
@@ -608,6 +633,37 @@ body.perch-admin-shell .perch-app-list-page {
   max-width: 100%;
 }
 
+body.perch-admin-shell .perch-content-body {
+  min-width: 0;
+}
+
+/* Changelist: title + “Add …” on one row; kill Django float rules that break the card layout */
+body.perch-admin-shell .perch-changelist-header {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  justify-content: space-between;
+  margin-bottom: 1.15rem;
+}
+
+body.perch-admin-shell .perch-page-heading--changelist {
+  flex: 1 1 12rem;
+  margin: 0;
+  min-width: 0;
+}
+
+body.perch-admin-shell .perch-page-heading--changelist h1 {
+  margin: 0;
+}
+
+body.perch-admin-shell .perch-changelist-header .object-tools {
+  flex: 0 1 auto;
+  margin-bottom: 0 !important;
+  overflow: visible;
+  text-align: right;
+}
+
 body.perch-admin-shell ul.object-tools {
   display: flex;
   flex-wrap: wrap;
@@ -616,6 +672,24 @@ body.perch-admin-shell ul.object-tools {
   list-style: none;
   margin: 0 0 1rem;
   padding: 0;
+}
+
+body.perch-admin-shell ul.object-tools li {
+  display: inline-flex;
+  float: none !important;
+  height: auto;
+  margin: 0 !important;
+}
+
+body.perch-admin-shell ul.object-tools li + li {
+  margin-left: 0 !important;
+}
+
+body.perch-admin-shell ul.object-tools a:link,
+body.perch-admin-shell ul.object-tools a:visited {
+  display: inline-flex !important;
+  align-items: center;
+  float: none !important;
 }
 
 body.perch-admin-shell ul.object-tools a {
@@ -639,6 +713,46 @@ body.perch-admin-shell ul.object-tools a.addlink {
   color: #fff !important;
 }
 
+body.perch-admin-shell #changelist .changelist-form-container {
+  align-items: stretch;
+  box-sizing: border-box;
+  gap: 1.25rem;
+  max-width: 100%;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+body.perch-admin-shell #changelist .changelist-form-container > .perch-changelist-main {
+  box-sizing: border-box;
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: column;
+  max-width: none;
+  min-width: 0;
+  width: 100%;
+}
+
+body.perch-admin-shell #changelist .changelist-form-container:has(#changelist-filter) > .perch-changelist-main {
+  flex: 1 1 0%;
+  max-width: none;
+  min-width: 0;
+  width: auto;
+}
+
+/* Django sets `.filtered .results { width: auto }`, which shrinks the table inside the flex column */
+body.perch-admin-shell.change-list #changelist.filtered .results,
+body.perch-admin-shell.change-list .filtered #changelist-form .results,
+body.perch-admin-shell.change-list #changelist.filtered #toolbar,
+body.perch-admin-shell.change-list #changelist.filtered div.xfull {
+  width: 100% !important;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+body.perch-admin-shell.change-list #changelist-form .results {
+  width: 100%;
+}
+
 body.perch-admin-shell #toolbar {
   align-items: center;
   background: rgba(255, 255, 255, 0.75);
@@ -647,8 +761,33 @@ body.perch-admin-shell #toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  justify-content: flex-start;
   margin-bottom: 1rem;
   padding: 0.65rem 1rem;
+}
+
+body.perch-admin-shell #toolbar form {
+  align-items: center;
+  box-sizing: border-box;
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  margin: 0;
+  max-width: min(36rem, 100%);
+}
+
+body.perch-admin-shell #toolbar form #searchbar,
+body.perch-admin-shell #toolbar form input[type='text'] {
+  flex: 1 1 12rem;
+  margin: 0 !important;
+  max-width: 22rem;
+  min-width: 0;
+  width: auto !important;
+}
+
+body.perch-admin-shell #toolbar form input[type='submit'] {
+  flex: 0 0 auto;
 }
 
 body.perch-admin-shell #toolbar form input {
@@ -674,6 +813,8 @@ body.perch-admin-shell #changelist table {
   border: 1px solid rgba(217, 223, 239, 0.95);
   border-radius: 18px;
   overflow: hidden;
+  table-layout: auto;
+  width: 100%;
 }
 
 body.perch-admin-shell #changelist table thead th {
@@ -709,17 +850,28 @@ body.perch-admin-shell #changelist .paginator a {
 }
 
 body.perch-admin-shell #changelist .actions {
+  align-items: center;
   background: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(217, 223, 239, 0.9);
   border-radius: 16px;
+  box-sizing: border-box;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.65rem;
   margin-bottom: 1rem;
-  padding: 0.75rem 1rem;
+  max-width: 100%;
+  padding: 0.65rem 0.9rem;
+  /* Django changelists.css sets width:100% — that stretches the bar past the controls */
+  width: auto !important;
 }
 
 body.perch-admin-shell #changelist-filter {
   background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid rgba(217, 223, 239, 0.88) !important;
   border-radius: 20px;
+  flex: 0 0 min(240px, 30vw) !important;
+  margin: 0 !important;
+  max-width: 100%;
   padding: 1rem 1rem 1.15rem !important;
 }
 
@@ -805,7 +957,7 @@ body.perch-admin-shell.delete-confirmation .perch-delete-confirm .button {
 @media (max-width: 680px) {
   .perch-topbar-inner,
   .perch-shell {
-    width: min(100vw - 20px, 1400px);
+    width: min(calc(100% - 20px), 1400px);
   }
 
   .perch-content-surface {
@@ -815,5 +967,26 @@ body.perch-admin-shell.delete-confirmation .perch-delete-confirm .button {
 
   .perch-model-row {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  body.perch-admin-shell #changelist-filter {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
+
+  body.perch-admin-shell .perch-changelist-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  body.perch-admin-shell .perch-changelist-header .object-tools {
+    text-align: left;
+    width: 100%;
+  }
+
+  body.perch-admin-shell .perch-changelist-header ul.object-tools {
+    justify-content: flex-start;
   }
 }
