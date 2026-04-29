@@ -102,13 +102,11 @@ class ListingAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
+        # Do not auto-change the listing owner's account role just because a
+        # listing was edited in admin. Role assignment should be explicit.
         if not (obj.owner.is_staff or obj.owner.is_superuser):
-            profile = ensure_account_profile(
-                obj.owner,
-                user_type='realtor',
-                email_verified=True,
-            )
-            ensure_role_profile(obj.owner, profile=profile)
+            ensure_account_profile(obj.owner, email_verified=True)
+            ensure_role_profile(obj.owner)
 
 
 @admin.register(ListingImage)

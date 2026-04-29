@@ -43,7 +43,12 @@ SECRET_KEY = 'django-insecure-=os&zt&9by!d7(hv925_$_b5&8%!s*tgfihkc(%(^+c+h&hy%-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# Dev-friendly defaults; override via env in real deployments.
+_env_allowed_hosts = [h.strip() for h in os.environ.get("PERCH_ALLOWED_HOSTS", "").split(",") if h.strip()]
+if DEBUG:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"] + _env_allowed_hosts
+else:
+    ALLOWED_HOSTS = _env_allowed_hosts
 
 
 # Application definition
@@ -176,6 +181,24 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'true').lower() == 'true'
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@perch.local')
 LOGIN_URL = '/auth/login/'
+
+# When demoing on a non-localhost URL (e.g., a LAN IP), add it to
+# PERCH_CSRF_TRUSTED_ORIGINS as a comma-separated list like:
+# "http://192.168.1.20:8000,https://my-demo.example.com"
+_env_csrf_trusted = [
+    o.strip() for o in os.environ.get("PERCH_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
+]
+CSRF_TRUSTED_ORIGINS = (
+    [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://0.0.0.0:8000",
+        "http://localhost",
+        "http://127.0.0.1",
+        "http://0.0.0.0",
+    ]
+    + _env_csrf_trusted
+)
 
 # Student roommate compatibility survey.
 # Can be an external URL or an internal path (e.g. "/student/compatibility-survey/").
