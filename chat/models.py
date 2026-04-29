@@ -7,6 +7,11 @@ class Conversation(models.Model):
         settings.AUTH_USER_MODEL,
         related_name='conversations',
     )
+    hidden_for = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='hidden_conversations',
+        blank=True,
+    )
     name = models.CharField(max_length=100, blank=True, default='')
     is_group = models.BooleanField(default=False)
     created_by = models.ForeignKey(

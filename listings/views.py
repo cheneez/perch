@@ -106,7 +106,22 @@ def create_listing(request):
 
     if request.method == "POST":
         form = FormClass(request.POST, request.FILES)
+        images = request.FILES.getlist("images")
+        photo_required_error = ""
+
+        if not images:
+            photo_required_error = "This field is required."
+
         if form.is_valid():
+            if photo_required_error:
+                form.add_error(None, "Please upload at least one photo.")
+                return render(request, "listings/create_fixed.html", {
+                    "form": form,
+                    "is_student_sublease": is_student_sublease,
+                    "google_maps_api_key": settings.GOOGLE_MAPS_API_KEY,
+                    "photo_required_error": photo_required_error,
+                })
+
             listing = form.save(commit=False)
             listing.owner = request.user
             if is_student_sublease:
@@ -114,13 +129,18 @@ def create_listing(request):
             listing.save()
             _update_listing_location_data(listing, request.POST)
 
-            images = request.FILES.getlist("images")
             for image in images:
                 ListingImage.objects.create(listing=listing, image=image)
 
             messages.success(request, "Listing created and submitted for approval.")
             return redirect("listings:listing-detail", pk=listing.pk)
-        messages.error(request, "Please fix the errors below.")
+
+        return render(request, "listings/create_fixed.html", {
+            "form": form,
+            "is_student_sublease": is_student_sublease,
+            "google_maps_api_key": settings.GOOGLE_MAPS_API_KEY,
+            "photo_required_error": photo_required_error,
+        })
     else:
         form = FormClass()
     return render(request, "listings/create_fixed.html", {
@@ -191,6 +211,20 @@ def delete_listing(request, pk):
 
     # Basic fallback: redirect back if someone visits GET.
     return redirect("listings:listing-detail", pk=pk)
+
+
+@login_required
+@require_POST
+def toggle_listing_visibility(request, pk):
+    listing = get_object_or_404(Listing, pk=pk, owner=request.user)
+    listing.is_hidden = not listing.is_hidden
+    listing.save(update_fields=["is_hidden"])
+    messages.success(
+        request,
+        "Listing hidden." if listing.is_hidden else "Listing is visible again.",
+    )
+    return redirect("listings:listings-list")
+
 
 def property_detail(request, pk):
     from groups.models import Group

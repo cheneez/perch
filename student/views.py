@@ -146,10 +146,14 @@ class StudentDashboardView(StudentProfileRequiredMixin, RoleRequiredMixin, Templ
             last_msg = conv.messages.order_by('-created_at').first()
             if not other or not last_msg:
                 continue
+            if conv.is_group:
+                display_name = conv.name.strip() if conv.name else "Group chat"
+            else:
+                display_name = other.get_full_name() or other.username
             preview_items.append(
                 {
                     "id": conv.id,
-                    "other_name": other.get_full_name() or other.username,
+                    "other_name": display_name,
                     "last_snippet": _clean_chat_preview_text(last_msg.content)[:80],
                     "timestamp": last_msg.created_at,
                 }

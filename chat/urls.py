@@ -12,6 +12,7 @@ urlpatterns = [
     path('api/conversations/<int:conversation_id>/participants/', views.conversation_participants_add, name='conversation_participants_add'),
     path('api/conversations/<int:conversation_id>/participants/<int:user_id>/', views.conversation_participant_remove, name='conversation_participant_remove'),
     path('api/conversations/<int:conversation_id>/', views.conversation_update, name='conversation_update'),
+    path('api/conversations/<int:conversation_id>/delete/', views.conversation_delete, name='conversation_delete'),
     path('api/users/search/', views.user_search, name='user_search'),
 ]
 

@@ -7,6 +7,7 @@ urlpatterns = [
     path('<int:pk>/', views.listing_detail, name='listing-detail'),
     path('<int:pk>/edit/', views.edit_listing, name='listing-edit'),
     path('<int:pk>/delete/', views.delete_listing, name='listing-delete'),
+    path('<int:pk>/toggle-visibility/', views.toggle_listing_visibility, name='listing-toggle-visibility'),
     path('detail/<int:pk>/', views.property_detail, name='listing-detail-legacy'),
     path('property/<int:pk>/', views.property_detail, name='property'),
     path('property/<int:pk>/contact/', views.contact_realtor, name='property-contact'),

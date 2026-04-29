@@ -99,6 +99,7 @@ def conversation_list(request):
     conversations = (
         Conversation.objects
         .filter(participants=request.user)
+        .exclude(hidden_for=request.user)
         .prefetch_related('participants')
         .order_by('-updated_at')
     )
@@ -179,6 +180,7 @@ def conversation_create(request):
             .first()
         )
         if existing:
+            existing.hidden_for.remove(request.user)
             return JsonResponse({'conversation': {'id': existing.id, 'created': False}})
 
     conv = Conversation.objects.create(
@@ -196,8 +198,13 @@ def conversation_create(request):
 def conversation_messages(request, conversation_id):
     """GET /chat/api/conversations/<id>/messages/"""
     try:
-        conv = Conversation.objects.get(id=conversation_id, participants=request.user)
+        conv = Conversation.objects.get(
+            id=conversation_id,
+            participants=request.user,
+        )
     except Conversation.DoesNotExist:
+        return JsonResponse({'error': 'Conversation not found'}, status=404)
+    if conv.hidden_for.filter(id=request.user.id).exists():
         return JsonResponse({'error': 'Conversation not found'}, status=404)
 
     messages_qs = conv.messages.select_related('sender').order_by('created_at')
@@ -330,6 +337,28 @@ def conversation_update(request, conversation_id):
     conv.name = new_name[:100]
     conv.save(update_fields=['name'])
     return JsonResponse({'name': conv.name})
+
+
+@_chat_user_required
+def conversation_delete(request, conversation_id):
+    """DELETE /chat/api/conversations/<id>/delete/ — hide/delete direct conversation."""
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        conv = Conversation.objects.get(id=conversation_id, participants=request.user)
+    except Conversation.DoesNotExist:
+        return JsonResponse({'error': 'Conversation not found'}, status=404)
+
+    if conv.is_group:
+        return JsonResponse({'error': 'Group conversations cannot be deleted here'}, status=400)
+
+    conv.hidden_for.add(request.user)
+    if conv.hidden_for.count() >= conv.participants.count():
+        conv.delete()
+        return JsonResponse({'deleted': conversation_id, 'deleted_globally': True})
+
+    return JsonResponse({'deleted': conversation_id, 'deleted_globally': False})
 
 
 @_chat_user_required
