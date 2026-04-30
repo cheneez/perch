@@ -211,6 +211,7 @@ CSRF_TRUSTED_ORIGINS = (
         "http://localhost",
         "http://127.0.0.1",
         "http://0.0.0.0",
+        "https://mysite-c3bh.onrender.com",
     ]
     + _env_csrf_trusted
 )
