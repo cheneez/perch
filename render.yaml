@@ -10,7 +10,7 @@ services:
     name: mysite
     runtime: python
     buildCommand: "./build.sh"
-    startCommand: "cd perch && python3 -m gunicorn perch.asgi -k uvicorn.workers.UvicornWorker"
+    startCommand: "python3 -m gunicorn perch.asgi:application -k uvicorn.workers.UvicornWorker"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
