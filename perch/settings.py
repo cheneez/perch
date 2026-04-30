@@ -44,12 +44,7 @@ SECRET_KEY = 'django-insecure-=os&zt&9by!d7(hv925_$_b5&8%!s*tgfihkc(%(^+c+h&hy%-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# Dev-friendly defaults; override via env in real deployments.
-_env_allowed_hosts = [h.strip() for h in os.environ.get("PERCH_ALLOWED_HOSTS", "").split(",") if h.strip()]
-if DEBUG:
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"] + _env_allowed_hosts
-else:
-    ALLOWED_HOSTS = _env_allowed_hosts
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
