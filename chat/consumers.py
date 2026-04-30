@@ -101,6 +101,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def _save_message(self, content):
         conversation = Conversation.objects.get(id=self.conversation_id)
+        # If anyone had hidden this DM, a new message makes it visible again.
+        conversation.hidden_for.clear()
         msg = Message.objects.create(
             conversation=conversation,
             sender=self.user,

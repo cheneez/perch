@@ -94,6 +94,9 @@
           <small class="text-muted" id="chatHeaderSub" style="display:none;"></small>
         </div>
         <div class="chat-header-actions">
+          <button class="btn btn-sm btn-outline-danger d-none" id="deleteDirectBtn" title="Delete conversation">
+            <i class="bi bi-trash"></i>
+          </button>
           <button class="btn btn-sm btn-outline-secondary d-none" id="manageMembersBtn" title="Members">
             <i class="bi bi-people"></i>
           </button>
@@ -123,6 +126,25 @@
     <button class="btn btn-sm btn-outline-danger w-100" id="leaveGroupBtn">
       <i class="bi bi-box-arrow-right me-1"></i>Leave group
     </button>
+  </div>
+</div>
+
+<!-- Chat Action Confirm Modal -->
+<div class="modal fade" id="chatConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="chatConfirmTitle">Confirm action</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="chatConfirmBody">
+        Are you sure?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="chatConfirmBtn">Confirm</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -209,6 +231,7 @@
   let activeConvParticipants = [];
   let chatSocket = null;
   let didHandleInitialRoute = false;
+  let chatConfirmModal = null;
 
   const $ = id => document.getElementById(id);
   const conversationList = $('conversationList');
@@ -220,11 +243,15 @@
   const chatHeaderName = $('chatHeaderName');
   const chatHeaderSub = $('chatHeaderSub');
   const chatHeaderAvatar = $('chatHeaderAvatar');
+  const deleteDirectBtn = $('deleteDirectBtn');
   const manageMembersBtn = $('manageMembersBtn');
   const chatInfoPanel = $('chatInfoPanel');
   const memberList = $('memberList');
   const chatSidebar = $('chatSidebar');
   const chatMain = $('chatMain');
+  const chatConfirmTitle = $('chatConfirmTitle');
+  const chatConfirmBody = $('chatConfirmBody');
+  const chatConfirmBtn = $('chatConfirmBtn');
 
   // ── Helpers ───────────────────────────────────────────────
 
@@ -232,6 +259,44 @@
     const parts = (name || '').trim().split(/\s+/);
     if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     return (name || '??').slice(0, 2).toUpperCase();
+  }
+
+  function confirmInModal({ title, body, confirmText = 'Confirm', confirmClass = 'btn-danger' }) {
+    if (!chatConfirmModal) {
+      chatConfirmModal = new bootstrap.Modal($('chatConfirmModal'));
+    }
+    chatConfirmTitle.textContent = title || 'Confirm action';
+    chatConfirmBody.textContent = body || 'Are you sure?';
+    chatConfirmBtn.textContent = confirmText;
+    chatConfirmBtn.className = `btn ${confirmClass}`;
+
+    return new Promise(resolve => {
+      let resolved = false;
+      const modalEl = $('chatConfirmModal');
+
+      const cleanup = () => {
+        chatConfirmBtn.removeEventListener('click', onConfirm);
+        modalEl.removeEventListener('hidden.bs.modal', onHidden);
+      };
+
+      const onConfirm = () => {
+        resolved = true;
+        cleanup();
+        chatConfirmModal.hide();
+        resolve(true);
+      };
+
+      const onHidden = () => {
+        if (!resolved) {
+          cleanup();
+          resolve(false);
+        }
+      };
+
+      chatConfirmBtn.addEventListener('click', onConfirm);
+      modalEl.addEventListener('hidden.bs.modal', onHidden, { once: true });
+      chatConfirmModal.show();
+    });
   }
 
   function formatTime(isoStr) {
@@ -403,6 +468,13 @@
 
   async function apiRemoveParticipant(convId, userId) {
     return fetch(`${API_BASE}/conversations/${convId}/participants/${userId}/`, {
+      method: 'DELETE',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    });
+  }
+
+  async function apiDeleteConversation(convId) {
+    return fetch(`${API_BASE}/conversations/${convId}/delete/`, {
       method: 'DELETE',
       headers: { 'X-CSRFToken': getCookie('csrftoken') },
     });
@@ -581,6 +653,7 @@
       activeConvParticipants = conv.participants.slice();
       updateChatHeader(conv);
       manageMembersBtn.classList.toggle('d-none', !conv.is_group);
+      deleteDirectBtn.classList.toggle('d-none', conv.is_group);
     }
 
     const messages = await fetchMessages(convId);
@@ -637,11 +710,43 @@
   }
 
   $('leaveGroupBtn').addEventListener('click', async () => {
-    if (!confirm('Leave this group?')) return;
+    const confirmed = await confirmInModal({
+      title: 'Leave group?',
+      body: 'You will be removed from this group conversation.',
+      confirmText: 'Leave group',
+      confirmClass: 'btn-danger',
+    });
+    if (!confirmed) return;
     await apiRemoveParticipant(activeConversationId, CURRENT_USER_ID);
     chatInfoPanel.classList.add('hidden');
     chatActive.classList.add('hidden');
     chatPlaceholder.classList.remove('hidden');
+    activeConversationId = null;
+    if (chatSocket) { chatSocket.close(); chatSocket = null; }
+    await fetchConversations();
+  });
+
+  deleteDirectBtn.addEventListener('click', async () => {
+    if (!activeConversationId || activeConvIsGroup) return;
+    const confirmed = await confirmInModal({
+      title: 'Delete conversation?',
+      body: 'This will permanently remove your direct conversation history. This cannot be undone.',
+      confirmText: 'Delete conversation',
+      confirmClass: 'btn-danger',
+    });
+    if (!confirmed) return;
+
+    const response = await apiDeleteConversation(activeConversationId);
+    const data = await response.json();
+    if (!response.ok) {
+      alert(data.error || 'Could not delete conversation.');
+      return;
+    }
+
+    chatInfoPanel.classList.add('hidden');
+    chatActive.classList.add('hidden');
+    chatPlaceholder.classList.remove('hidden');
+    deleteDirectBtn.classList.add('d-none');
     activeConversationId = null;
     if (chatSocket) { chatSocket.close(); chatSocket = null; }
     await fetchConversations();

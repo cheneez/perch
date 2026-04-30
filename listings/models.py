@@ -4,7 +4,7 @@ from django.db import models
 
 class ListingQuerySet(models.QuerySet):
     def publicly_visible(self):
-        return self.filter(moderation_status='approved')
+        return self.filter(moderation_status='approved', is_hidden=False)
 
     def accessible_to(self, user):
         visible = self.publicly_visible()
@@ -99,6 +99,7 @@ class Listing(models.Model):
     )
     moderation_notes = models.TextField(blank=True)
     verified = models.BooleanField(default=False)
+    is_hidden = models.BooleanField(default=False)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

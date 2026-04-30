@@ -35,6 +35,9 @@
                 {% else %}
                   <span class="badge text-bg-secondary">Unverified</span>
                 {% endif %}
+                {% if listing.is_hidden %}
+                  <span class="badge text-bg-dark">Hidden</span>
+                {% endif %}
                 {% if listing.moderation_status == 'pending' %}
                   <span class="badge text-bg-warning">Pending approval</span>
                 {% elif listing.moderation_status == 'rejected' %}
@@ -56,6 +59,14 @@
               <div class="mt-auto d-flex gap-2">
                 <a href="{% url 'listings:listing-detail' listing.pk %}" class="btn btn-outline-primary btn-sm">View</a>
                 <a href="{% url 'listings:listing-edit' listing.pk %}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                <form method="post" action="{% url 'listings:listing-toggle-visibility' listing.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  {% if listing.is_hidden %}
+                    <button type="submit" class="btn btn-outline-success btn-sm">Unhide</button>
+                  {% else %}
+                    <button type="submit" class="btn btn-outline-dark btn-sm">Hide</button>
+                  {% endif %}
+                </form>
               </div>
             </div>
           </div>

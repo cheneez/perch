@@ -1,12 +1,14 @@
 <h5 class="mb-3">Basic Info</h5>
 <div class="row g-3 mb-4">
   <div class="col-md-6">
-    <label for="{{ form.title.id_for_label }}" class="form-label">Title</label>
+    <label for="{{ form.title.id_for_label }}" class="form-label">Title{% if form.title.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.title }}
+    {% for error in form.title.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
   </div>
   <div class="col-md-6">
-    <label for="{{ form.address.id_for_label }}" class="form-label">Address</label>
+    <label for="{{ form.address.id_for_label }}" class="form-label">Address{% if form.address.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.address }}
+    {% for error in form.address.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
     <input type="hidden" name="_lat" id="id_place_lat" value="{% if form.instance.pk and form.instance.latitude is not None %}{{ form.instance.latitude }}{% endif %}">
     <input type="hidden" name="_lng" id="id_place_lng" value="{% if form.instance.pk and form.instance.longitude is not None %}{{ form.instance.longitude }}{% endif %}">
     <div id="address-validation-message" class="invalid-feedback d-none"></div>
@@ -14,78 +16,87 @@
     <div class="form-text text-muted">Start typing and choose a suggested address.</div>
   </div>
   <div class="col-md-3">
-    <label for="{{ form.bedrooms.id_for_label }}" class="form-label">Bedrooms</label>
+    <label for="{{ form.bedrooms.id_for_label }}" class="form-label">Bedrooms{% if form.bedrooms.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.bedrooms }}
+    {% for error in form.bedrooms.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
   </div>
   <div class="col-md-3">
-    <label for="{{ form.bathrooms.id_for_label }}" class="form-label">Bathrooms</label>
+    <label for="{{ form.bathrooms.id_for_label }}" class="form-label">Bathrooms{% if form.bathrooms.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.bathrooms }}
+    {% for error in form.bathrooms.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
   </div>
   <div class="col-md-6">
-    <label for="{{ form.distance_miles.id_for_label }}" class="form-label">Distance to Campus (miles)</label>
+    <label for="{{ form.distance_miles.id_for_label }}" class="form-label">Distance to Campus (miles){% if form.distance_miles.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.distance_miles }}
     <div class="form-text text-muted">Auto-calculated from the address to Boston College, 140 Commonwealth Ave, Chestnut Hill, MA 02467.</div>
   </div>
 </div>
 
 <div class="mb-4">
-  <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+  <label for="{{ form.description.id_for_label }}" class="form-label">Description{% if form.description.field.required %} <span class="text-danger">*</span>{% endif %}</label>
   {{ form.description }}
+  {% for error in form.description.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
 </div>
 
 <h5 class="mb-3">Pricing & Fees</h5>
 <div class="row g-3 mb-4">
   <div class="col-md-4">
-    <label for="{{ form.price_monthly.id_for_label }}" class="form-label">Monthly Price ($)</label>
+    <label for="{{ form.price_monthly.id_for_label }}" class="form-label">Monthly Price ($){% if form.price_monthly.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.price_monthly }}
+    {% for error in form.price_monthly.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
   </div>
   {% if not is_student_sublease %}
   <div class="col-md-4">
-    <label for="{{ form.security_deposit.id_for_label }}" class="form-label">Security Deposit ($)</label>
+    <label for="{{ form.security_deposit.id_for_label }}" class="form-label">Security Deposit ($){% if form.security_deposit.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.security_deposit }}
   </div>
   <div class="col-md-4">
-    <label for="{{ form.broker_fee.id_for_label }}" class="form-label">Broker Fee ($)</label>
+    <label for="{{ form.broker_fee.id_for_label }}" class="form-label">Broker Fee ($){% if form.broker_fee.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.broker_fee }}
   </div>
   <div class="col-md-4">
-    <label for="{{ form.application_fee.id_for_label }}" class="form-label">Application Fee ($)</label>
+    <label for="{{ form.application_fee.id_for_label }}" class="form-label">Application Fee ($){% if form.application_fee.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.application_fee }}
   </div>
   {% endif %}
   <div class="col-md-4">
-    <label for="{{ form.estimated_utilities_cost.id_for_label }}" class="form-label">Est. Utilities / Month ($)</label>
+    <label for="{{ form.estimated_utilities_cost.id_for_label }}" class="form-label">Est. Utilities / Month ($){% if form.estimated_utilities_cost.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.estimated_utilities_cost }}
   </div>
   <div class="col-md-4">
-    <label for="{{ form.total_upfront_cost.id_for_label }}" class="form-label">Total Upfront Cost ($)</label>
+    <label for="{{ form.total_upfront_cost.id_for_label }}" class="form-label">Total Upfront Cost ($){% if form.total_upfront_cost.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.total_upfront_cost }}
   </div>
   <div class="col-md-4">
-    <label for="{{ form.status.id_for_label }}" class="form-label">Listing Status</label>
+    <label for="{{ form.status.id_for_label }}" class="form-label">Listing Status{% if form.status.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.status }}
+    {% for error in form.status.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
   </div>
 </div>
 
 <h5 class="mb-3">Lease Details</h5>
 <div class="row g-3 mb-4">
   <div class="col-md-6">
-    <label for="{{ form.room_type.id_for_label }}" class="form-label">Room Type</label>
+    <label for="{{ form.room_type.id_for_label }}" class="form-label">Room Type{% if form.room_type.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.room_type }}
+    {% for error in form.room_type.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
   </div>
   {% if not is_student_sublease %}
   <div class="col-md-6">
-    <label for="{{ form.lease_type.id_for_label }}" class="form-label">Lease Type</label>
+    <label for="{{ form.lease_type.id_for_label }}" class="form-label">Lease Type{% if form.lease_type.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.lease_type }}
+    {% for error in form.lease_type.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
   </div>
   {% endif %}
   <div class="col-md-6">
-    <label for="{{ form.lease_start.id_for_label }}" class="form-label">Lease Start</label>
+    <label for="{{ form.lease_start.id_for_label }}" class="form-label">Lease Start{% if form.lease_start.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.lease_start }}
+    {% for error in form.lease_start.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
   </div>
   <div class="col-md-6">
-    <label for="{{ form.lease_end.id_for_label }}" class="form-label">Lease End</label>
+    <label for="{{ form.lease_end.id_for_label }}" class="form-label">Lease End{% if form.lease_end.field.required %} <span class="text-danger">*</span>{% endif %}</label>
     {{ form.lease_end }}
+    {% for error in form.lease_end.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
   </div>
 </div>
 
@@ -127,7 +138,10 @@
 
 <h5 class="mb-3">Photos</h5>
 <div class="mb-3">
-  <label for="images" class="form-label">Upload Photos</label>
+  <label for="images" class="form-label">Upload Photos <span class="text-danger">*</span></label>
   <input id="images" name="images" type="file" class="form-control" multiple accept="image/*">
-  <div class="form-text text-muted">Upload images from your computer.</div>
+  {% if photo_required_error %}
+    <div class="text-danger small mt-1">{{ photo_required_error }}</div>
+  {% endif %}
+  <div class="form-text text-muted">Upload at least one image of your listing.</div>
 </div>
