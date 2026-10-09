@@ -6,34 +6,40 @@ Built by a team of six for **CSCI3356 Software Engineering** at Boston College (
 
 ## My contributions: Hiram Chen ([@cheneez](https://github.com/cheneez))
 
-13 commits from the project's first commit in March to the final demo in April. [See all of them.](https://github.com/cheneez/perch/commits/main/?author=cheneez)
+I worked on Perch from its first commit in March to the final demo in April ([commit history](https://github.com/cheneez/perch/commits/main/?author=cheneez)). My focus was the parts a housing platform depends on most: **who is allowed in, how students are matched, and how the community stays safe.**
 
-### Roommate compatibility survey and scoring model
+### 1. Trust: only real BC students can join
+[`accounts/views.py`](accounts/views.py) · [`perch/settings.py`](perch/settings.py) · [`accounts/tests.py`](accounts/tests.py)
+
+A housing app where strangers can pose as students is unsafe, so I made identity the first thing the system gets right.
+
+- **Laid the project's foundation:** created the Django project, its configuration, and the original login and signup flow.
+- **Verified `@bc.edu` identities only.** The rule is enforced twice: when the signup form is submitted, and again when Google returns the signed-in identity. Editing a request in the browser cannot bypass it.
+- **Removed a redundant step without lowering security:** students trust Google's `email_verified` claim instead of clicking a second email link.
+- **Clear failures:** token-exchange, network and profile errors are caught and explained to the user, not shown as a crash.
+- **Covered by automated tests:** non-BC emails are rejected and no account is created, while verified Google students go straight to their dashboard.
+
+### 2. Matching: turning lifestyle answers into data
 [`student/models.py`](student/models.py) · [`student/views.py`](student/views.py)
 
-- Designed the **12-question lifestyle survey** (cleanliness, sleep schedule, noise, smoking, guests, pets, personality and more) and its data model, with one saved response per student.
-- Encoded every answer onto a consistent **1–5 numeric scale**. Each choice carries its score in its key, so new questions plug in without extra code.
-- Turned each student's answers into a **five-part compatibility profile** (personality, living habits, roommate preference, cleanliness, sleep). This is the numeric foundation the team's weighted roommate-matching feature ([`student/compatibility.py`](student/compatibility.py)) builds on.
+Roommate conflicts usually come from everyday habits, so I designed a way to measure them.
 
-### Account security and project foundation
-[`accounts/views.py`](accounts/views.py) · [`perch/settings.py`](perch/settings.py)
+- **Designed a 12-question lifestyle survey** covering cleanliness, sleep schedule, noise, smoking, guests, parties, pets, personality and conflict style, stored as one validated response per student.
+- **Put every answer on one 1–5 scale.** Each choice carries its score in its key (`s1_…` to `s5_…`), so any question can be compared numerically, and new questions need no extra scoring code.
+- **Built each student a five-part compatibility profile** (personality, living habits, roommate preference, cleanliness, sleep). These are the numbers Perch's roommate matching uses to rank compatible students.
 
-- Set up the Django project and built the original login and signup system that the team built on.
-- Restricted student accounts to **verified `@bc.edu` Google identities**, so only real BC students can join. The rule is checked at signup and again when Google returns the user. I used Google's verified-email flag so students skip a second email-link step, and added tests for these rules.
-- Hardened the Google sign-in error handling so network, token and profile failures show a clear message instead of crashing.
-- Fixed role switching and CSRF settings before the final demo.
-
-### Moderation and notifications
+### 3. Safety: reporting, moderation and notifications
 [`notifications/`](notifications/) · [`moderation/admin.py`](moderation/admin.py)
 
-- Built the **notifications app from scratch**, including its model, views, unread count in the navigation bar, and notification page.
-- Added "report" links on public profiles, so admins receive reports and reply, and users are notified of the outcome.
+- **Built a notifications system from scratch,** a self-contained Django app with its own data model, pages, and an unread badge in the navigation bar on every page.
+- **Closed the moderation loop:** users can report a profile, admins review and reply, and the reporter is notified automatically, so reports never disappear silently.
 
-### Search and admin tools
-[`perch/search_views.py`](perch/search_views.py)
+### 4. Discovery and reliability
+[`perch/search_views.py`](perch/search_views.py) · [`perch/settings.py`](perch/settings.py)
 
-- Built user search across students and landlords, with public profile pages, plus seed data for demos.
-- Redesigned the admin page layout.
+- **People search** across students and landlords. It matches first name, last name, username or a full "first last" query, shows only active accounts (suspended users are hidden), and links to public profiles.
+- **Fixed a data-integrity bug** where editing a listing in the admin panel silently changed the owner's account type. Role changes now happen only explicitly.
+- **Made the app demo-ready** with secure, environment-based host and CSRF settings, which are strict in production and convenient for local demos.
 
 ## Features
 
