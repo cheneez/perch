@@ -4,6 +4,37 @@ An off-campus housing platform for Boston College students and local landlords. 
 
 Built by a team of six for **CSCI3356 Software Engineering** at Boston College (Spring 2026). This is a personal copy of the team repository, with full commit history, shared with permission for portfolio purposes.
 
+## My contributions: Hiram Chen ([@cheneez](https://github.com/cheneez))
+
+13 commits from the project's first commit in March to the final demo in April. [See all of them.](https://github.com/cheneez/perch/commits/main/?author=cheneez)
+
+### Roommate compatibility survey and scoring model
+[`student/models.py`](student/models.py) · [`student/views.py`](student/views.py)
+
+- Designed the **12-question lifestyle survey** (cleanliness, sleep schedule, noise, smoking, guests, pets, personality and more) and its data model, with one saved response per student.
+- Encoded every answer onto a consistent **1–5 numeric scale**. Each choice carries its score in its key, so new questions plug in without extra code.
+- Turned each student's answers into a **five-part compatibility profile** (personality, living habits, roommate preference, cleanliness, sleep). This is the numeric foundation the team's weighted roommate-matching feature ([`student/compatibility.py`](student/compatibility.py)) builds on.
+
+### Account security and project foundation
+[`accounts/views.py`](accounts/views.py) · [`perch/settings.py`](perch/settings.py)
+
+- Set up the Django project and built the original login and signup system that the team built on.
+- Restricted student accounts to **verified `@bc.edu` Google identities**, so only real BC students can join. The rule is checked at signup and again when Google returns the user. I used Google's verified-email flag so students skip a second email-link step, and added tests for these rules.
+- Hardened the Google sign-in error handling so network, token and profile failures show a clear message instead of crashing.
+- Fixed role switching and CSRF settings before the final demo.
+
+### Moderation and notifications
+[`notifications/`](notifications/) · [`moderation/admin.py`](moderation/admin.py)
+
+- Built the **notifications app from scratch**, including its model, views, unread count in the navigation bar, and notification page.
+- Added "report" links on public profiles, so admins receive reports and reply, and users are notified of the outcome.
+
+### Search and admin tools
+[`perch/search_views.py`](perch/search_views.py)
+
+- Built user search across students and landlords, with public profile pages, plus seed data for demos.
+- Redesigned the admin page layout.
+
 ## Features
 
 - **Accounts and authentication:** Google Sign-In restricted to verified `@bc.edu` emails for students, plus separate landlord (lessor) accounts with verification.
@@ -17,17 +48,9 @@ Built by a team of six for **CSCI3356 Software Engineering** at Boston College (
 
 Python, Django, Django Channels (Daphne / Uvicorn), PostgreSQL (SQLite locally), WhiteNoise, Google OAuth 2.0, Google Maps API, Locust. It was deployed on Render during the course.
 
-## My contributions (Hiram Chen, `cheneez`)
-
-- Built the login system and Google Sign-In authentication, restricted student signup to verified `@bc.edu` emails, and wrote the accompanying tests.
-- Designed and implemented the roommate compatibility survey, including its data model, scoring, and display on student profiles.
-- Built user search and public profile pages, and seeded test students and landlords for demos.
-- Added the report workflow on public profiles, report notifications, and admin replies.
-- Fixed role switching and CSRF settings for the final demo, and fixed the admin page layout.
-
 ## Team
 
-Hiram Chen ([@cheneez](https://github.com/cheneez)), Luke Lestina ([@LukeLestina](https://github.com/LukeLestina)), Jorge ([@Jorge-Saq](https://github.com/Jorge-Saq)), Nathan Thai, James Labrador, Stephen Jones
+Hiram Chen ([@cheneez](https://github.com/cheneez)), Stephen Jones ([@SJones339](https://github.com/SJones339)), Jorge ([@Jorge-Saq](https://github.com/Jorge-Saq)), Luke Lestina ([@LukeLestina](https://github.com/LukeLestina)), Nathan Thai ([@daganaa](https://github.com/daganaa)), James Labrador ([@jartus101](https://github.com/jartus101))
 
 ## Running locally
 
