@@ -6,7 +6,7 @@ Built by a team of six for **CSCI3356 Software Engineering** at Boston College (
 
 ## My contributions: Hiram Chen ([@cheneez](https://github.com/cheneez))
 
-I worked on Perch from its first commit in March to the final demo in April ([commit history](https://github.com/cheneez/perch/commits/main/?author=cheneez)). My focus was the parts a housing platform depends on most: **who is allowed in, how students are matched, and how the community stays safe.**
+I worked on Perch from its first commit in March to the final demo in April, with **12 commits and 3 merged pull requests** ([commit history](https://github.com/cheneez/perch/commits/main/?author=cheneez)). My focus was the parts a housing platform depends on most: **who is allowed in, how students are matched, and how the community stays safe.**
 
 ### 1. Trust: only real BC students can join
 [`accounts/views.py`](accounts/views.py) · [`perch/settings.py`](perch/settings.py) · [`accounts/tests.py`](accounts/tests.py)
@@ -24,7 +24,7 @@ A housing app where strangers can pose as students is unsafe, so I made identity
 
 Roommate conflicts usually come from everyday habits, so I designed a way to measure them.
 
-- **Designed a 12-question lifestyle survey** covering cleanliness, sleep schedule, noise, smoking, guests, parties, pets, personality and conflict style, stored as one validated response per student.
+- **Designed a 12-question lifestyle survey** covering cleanliness, sleep schedule, noise, smoking, guests, parties, pets, personality and conflict style, stored as one saved response per student.
 - **Put every answer on one 1–5 scale.** Each choice carries its score in its key (`s1_…` to `s5_…`), so any question can be compared numerically, and new questions need no extra scoring code.
 - **Built each student a five-part compatibility profile** (personality, living habits, roommate preference, cleanliness, sleep). These are the numbers Perch's roommate matching uses to rank compatible students.
 
